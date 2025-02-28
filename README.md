@@ -1,6 +1,6 @@
 # Project Name
 
-A modern web application built with Next.js, Supabase, and TypeScript.
+Ankards Company Invoicing System.
 
 ## Overview
 
@@ -17,7 +17,7 @@ This project is a full-stack application that leverages the power of Next.js for
 
 Before you begin, ensure you have the following installed:
 
-- Node.js (v16 or higher)
+- Node.js (v18 or higher)
 - npm or yarn
 - A Supabase account and project
 
@@ -25,15 +25,16 @@ Before you begin, ensure you have the following installed:
 
 Create a `.env` file in the root directory with the following variables:
 
-- NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-- NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_ANON_KEY
+You don't expect to get the Environment Variables from the REAMDE, do you?
 
 ## Installation
 
 1. Clone the repository:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/CharlieAlbert/invoicing-system.git
 ```
 
 2. Install dependencies:
@@ -73,6 +74,7 @@ yarn dev
 - Protected routes with middleware
 - Type-safe database operations
 - Server-side rendering support
+Features will be updated as the development proceeds.
 
 ## Authentication
 
@@ -86,6 +88,12 @@ Supabase is used as the primary database. Database types and client configuratio
 - `lib/supabase/client.ts`
 - `lib/supabase/server.ts`
 
+## Server Function
+
+Server functions for Supabase `CRUD` operations can be found in:
+
+- `lib/supabase/server-extended`
+
 ## Contributing
 
 1. Fork the repository
@@ -94,13 +102,9 @@ Supabase is used as the primary database. Database types and client configuratio
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
-
-[Add your license here]
-
 ## Contact
 
-[Add your contact information]
+charlieraph36@gmail.com
 
 ## Acknowledgments
 
