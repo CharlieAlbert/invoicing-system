@@ -27,6 +27,7 @@ Create a `.env` file in the root directory with the following variables:
 
 - NEXT_PUBLIC_SUPABASE_URL
 - NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 You don't expect to get the Environment Variables from the REAMDE, do you?
 
 ## Installation
@@ -74,6 +75,7 @@ yarn dev
 - Protected routes with middleware
 - Type-safe database operations
 - Server-side rendering support
+
 Features will be updated as the development proceeds.
 
 ## Authentication
