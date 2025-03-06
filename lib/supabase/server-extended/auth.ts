@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "../server";
+import { Database } from "../types";
 
 type SignUp = {
   email: string;
@@ -8,6 +9,8 @@ type SignUp = {
   name: string;
   phone: string;
 };
+
+type AccountData = Database["public"]["Tables"]["account"]["Row"];
 
 export async function SignUpRequest({ email, password, name, phone }: SignUp) {
   const supabase = await createClient();
@@ -59,18 +62,7 @@ export async function ValidateOtp({ email, otp }: validateOtp) {
     throw new Error("Error validating user.");
   }
 
-  const { error: AccountError } = await supabase.from("account").insert({
-    name: data.user.user_metadata?.name || email.split("@")[0],
-    email: email,
-    phone: data.user.user_metadata?.phone || null,
-    role: "user",
-    auth_id: data.user.id,
-  });
-
-  if (AccountError) {
-    console.error("Error creating account:", AccountError);
-    throw new Error("Failed to create account. Please try again later.");
-  }
+  console.log("User: ", { user: data.user, session: data.session });
 
   return { data };
 }
@@ -113,4 +105,41 @@ export async function Login({ email, password }: LoginCredentials) {
   }
 
   return { user: data.user, session: data.session, account: AccountData };
+}
+
+export const getSelfProfile = async (): Promise<{
+  data?: AccountData;
+  error?: string;
+}> => {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: AuthError,
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "User not found" };
+
+  if (AuthError) {
+    console.error("Error fetching user:", AuthError);
+    throw new Error("Error fetching user.");
+  }
+
+  const { data, error } = await supabase
+    .from("account")
+    .select("*")
+    .eq("auth_id", user.id)
+    .single();
+
+  if (error) {
+    console.error(error);
+    return { error: "encountered an error" };
+  }
+
+  return { data };
+};
+
+export async function Logout() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
 }
