@@ -38,7 +38,6 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
@@ -46,18 +45,19 @@ export default function SignupPage() {
     }
 
     try {
-      await SignUpRequest({
+      const response = await SignUpRequest({
         email: formData.email,
         password: formData.password,
         name: formData.name,
         phone: formData.phone,
       });
 
-      // Store email in localStorage or sessionStorage for OTP verification
-      sessionStorage.setItem("signupEmail", formData.email);
+      if (response.success) {
+        sessionStorage.setItem("signUpEmail", formData.email);
+        sessionStorage.setItem("signUpPassword", formData.password);
+      }
 
-      // Redirect to OTP verification page
-      router.push("/verify-otp");
+      router.push("/auth/verify-otp");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sign up");
     } finally {
@@ -77,7 +77,7 @@ export default function SignupPage() {
               Enter your information to create an account
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 my-4">
             {error && (
               <div className="rounded bg-red-100 p-2 text-red-600">{error}</div>
             )}

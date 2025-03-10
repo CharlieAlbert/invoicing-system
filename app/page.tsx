@@ -11,10 +11,10 @@ export default function Home() {
         </p>
         <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
           <Button asChild className="flex-1">
-            <Link href="/login">Login</Link>
+            <Link href="/auth/login">Login</Link>
           </Button>
           <Button asChild variant="outline" className="flex-1">
-            <Link href="/signup">Sign Up</Link>
+            <Link href="/auth/signup">Sign Up</Link>
           </Button>
         </div>
       </div>

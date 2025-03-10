@@ -5,23 +5,23 @@ import { Package, FileText, FileSpreadsheet, BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
-export default async function DashboardPage() {
+export default function DashboardPage() {
   const { user, loading, error } = useAuth();
 
   const router = useRouter();
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  // if (loading) {
+  //   return <div>Loading...</div>;
+  // }
 
   if (!user || error) {
-    router.push("/login");
+    router.push("/auth/login");
   }
 
   return (
     <div className="space-y-4">
       <h1 className="text-3xl font-bold">Dashboard Overview</h1>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-16 md:mb-0">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">

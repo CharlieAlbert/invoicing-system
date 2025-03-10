@@ -19,33 +19,37 @@ export async function SignUpRequest({ email, password, name, phone }: SignUp) {
     throw new Error("Email and password are required");
   }
 
-  const { error } = await supabase.auth.signInWithOtp({
+  const { data, error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       data: {
         name,
         phone,
+        password,
       },
     },
   });
 
   if (error) {
-    console.error("OTP error");
+    console.error("OTP error:", error.message);
 
     if (error.message.includes("email") || error.message.includes("smtp")) {
       throw new Error("Email delivery issue. Please try again later.");
     }
+
+    throw new Error("Unable to send verification code. Please try again.");
   }
 
-  return { error: "Unable to sign in. Please contact admin." };
+  return { success: true, message: "Verification code sent to your email" };
 }
 
 type validateOtp = {
   email: string;
   otp: string;
+  password?: string;
 };
 
-export async function ValidateOtp({ email, otp }: validateOtp) {
+export async function ValidateOtp({ email, otp, password }: validateOtp) {
   const supabase = await createClient();
 
   if (!email || !otp) {
@@ -58,11 +62,69 @@ export async function ValidateOtp({ email, otp }: validateOtp) {
     type: "email",
   });
 
-  if (!data.user || !data.session || error) {
-    throw new Error("Error validating user.");
+  if (error || !data.user) {
+    console.error("OTP verification error:", error);
+    throw new Error("Invalid verification code. Please try again.");
   }
 
-  console.log("User: ", { user: data.user, session: data.session });
+  if (data.user && data.user.identities?.length) {
+    const userData = data.user.user_metadata;
+
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password: userData.password,
+      options: {
+        data: {
+          name: userData.name,
+          phone: userData.phone,
+        },
+      },
+    });
+
+    if (signUpError) {
+      console.error("Account creation error:", signUpError.message);
+      throw new Error("Failed to create account. Please try again.");
+    }
+
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.getSession();
+
+    if (sessionError || !sessionData.session) {
+      console.error("Session refresh error:", sessionError?.message);
+      throw new Error("Authentication failed after sign-up. Please log in.");
+    }
+
+    // Check if an account already exists for this email
+    const { data: existingAccount } = await supabase
+      .from("account")
+      .select("id")
+      .eq("email", email)
+      .single();
+
+    if (existingAccount) {
+      console.warn("Account already exists for this email:", email);
+      return { data: sessionData }; // Avoid duplicate entries
+    }
+
+    console.log("Auth ID before insert:", data.user.id); // Debugging
+
+    const { error: accountError } = await supabase.from("account").insert([
+      {
+        email,
+        name: userData.name,
+        phone: userData.phone,
+        role: "staff",
+        auth_id: data.user.id,
+      },
+    ]);
+
+    if (accountError) {
+      console.error("Account record creation error:", accountError);
+      throw new Error("Error finalizing your account. Please contact support.");
+    }
+
+    return { data: sessionData };
+  }
 
   return { data };
 }

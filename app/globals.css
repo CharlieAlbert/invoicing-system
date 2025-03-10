@@ -9,7 +9,20 @@
   --font-mono: var(--font-geist-mono);
 }
 
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .content-area {
+    width: calc(100% - var(--sidebar-width));
+    margin-left: var(--sidebar-width);
+    transition: all 0.3s ease-in-out;
+  }
+}
+
 :root {
+  --sidebar-width: 16rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.13 0.028 261.692);
   --card: oklch(1 0 0);
