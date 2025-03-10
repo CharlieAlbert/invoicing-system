@@ -1,127 +1,173 @@
-# Project Name
+# 🧾 Ankards Company Invoicing System
 
-Ankards Company Invoicing System.
+## 🚀 Overview
 
-## Overview
+Ankards Company Invoicing System is a full-stack application leveraging **Next.js** for the frontend and **Supabase** for the backend database and authentication services.
 
-This project is a full-stack application that leverages the power of Next.js for the frontend and Supabase for the backend database and authentication services.
+## 🛠 Tech Stack
 
-## Tech Stack
-
-- **Frontend**: Next.js
-- **Backend**: Supabase
+- **Frontend**: Next.js (React framework)
+- **Backend**: Supabase (PostgreSQL + Authentication)
 - **Language**: TypeScript
 - **Authentication**: Supabase Auth
 
-## Prerequisites
+---
+
+## 📌 Prerequisites
 
 Before you begin, ensure you have the following installed:
 
-- Node.js (v18 or higher)
+- [Node.js](https://nodejs.org/) (v18 or higher)
 - npm or yarn
-- A Supabase account and project
+- A [Supabase](https://supabase.com/) account and project
 
-## Environment Setup
+---
+
+## ⚙️ Environment Setup
 
 Create a `.env` file in the root directory with the following variables:
 
-- NEXT_PUBLIC_SUPABASE_URL
-- NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-You don't expect to get the Environment Variables from the REAMDE, do you?
-
-## Installation
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/CharlieAlbert/invoicing-system.git
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-2. Install dependencies:
+⚠️ **Note:** Your environment variables should remain private and should not be shared in public repositories.
 
-```bash
-npm install
-# or
-yarn install
+---
+
+## 📥 Installation
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/CharlieAlbert/invoicing-system.git
+   cd invoicing-system
+   ```
+
+2. **Install dependencies:**
+
+   ```bash
+   npm install  # or yarn install
+   ```
+
+3. **Run the development server:**
+   ```bash
+   npm run dev  # or yarn dev
+   ```
+
+The app should now be running at [http://localhost:3000](http://localhost:3000).
+
+---
+
+## 📂 Project Structure
+
+```
+📦 invoicing-system
+├── 📂 app/                  # Next.js app directory
+│   ├── layout.tsx           # Root layout component
+│   ├── page.tsx             # Main entry page
+│   ├── 📂 auth/             # Authentication pages
+│   ├── 📂 dashboard/        # Dashboard views
+│
+├── 📂 components/           # Reusable UI components
+│   ├── Button.tsx
+│   ├── Navbar.tsx
+│   ├── Sidebar.tsx
+│   ├── ...
+│
+├── 📂 contexts/             # Context providers (e.g., Auth)
+│   ├── AuthContext.tsx
+│
+├── 📂 lib/
+│   ├── 📂 supabase/         # Supabase integration
+│   │   ├── client.ts        # Supabase client configuration
+│   │   ├── server.ts        # Server-side Supabase utilities
+│   │   ├── types.ts         # TypeScript types for Supabase
+│   │   ├── middleware.ts    # Authentication middleware
+│   │   ├── 📂 server-extended/ # Supabase server-side functions
+│
+├── 📂 public/               # Static assets (images, fonts, etc.)
+│
+├── 📂 utils/                # Utility functions and hooks
+│   ├── supabase.ts          # Supabase helper functions
+│   ├── auth.tsx             # Authentication hooks and utilities
+│
+├── .env                     # Environment variables (ignored in version control)
+├── .gitignore               # Git ignore file
+├── README.md                # Project documentation
+└── package.json             # Project dependencies and scripts
 ```
 
-3. Run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+## 🔐 Authentication
 
-## Project Structure
+The project uses **Supabase Authentication** for user management.
 
-```
-app/
-    layout.tsx
-    page.tsx
-    auth/
-    dashboard/
-components/
-    ...
-contexts/
-    AuthContext.tsx
-lib/
-    supabase/
-        server-extended/ # Supabase server-side functions
-        client.ts        # Supabase client configuration
-        server.ts        # Server-side Supabase utilities
-        types.ts         # TypeScript types for Supabase
-        middleware.ts    # Authentication middleware
-    utils.ts             # Utility functions
-public/
-    ...
-utils/
-    supabase.ts          # Supabase utilities
-    auth.tsx             # Authentication components and hooks
-```
+- Authentication utilities are in `utils/auth.tsx`.
+- Protected routes are handled by `lib/supabase/middleware.ts`.
 
-## Features
+---
 
-- User authentication (sign up, sign in, sign out)
-- Protected routes with middleware
-- Type-safe database operations
-- Server-side rendering support
+## 📊 Database
 
-Features will be updated as the development proceeds.
+**Supabase** is used as the primary database. Related configurations can be found in:
 
-## Authentication
+- `lib/supabase/types.ts` → Database types
+- `lib/supabase/client.ts` → Supabase client setup
+- `lib/supabase/server.ts` → Server-side utilities
 
-The project uses Supabase Authentication for user management. Authentication utilities can be found in `utils/auth.tsx` and protected routes are handled by the middleware in `lib/supabase/middleware.ts`.
+---
 
-## Database
+## ⚡ Server Functions
 
-Supabase is used as the primary database. Database types and client configurations can be found in:
+Server-side **CRUD operations** for Supabase are in:
 
-- `lib/supabase/types.ts`
-- `lib/supabase/client.ts`
-- `lib/supabase/server.ts`
+- `lib/supabase/server-extended/`
 
-## Server Function
+---
 
-Server functions for Supabase `CRUD` operations can be found in:
+## ✨ Features
 
-- `lib/supabase/server-extended`
+✔️ User authentication (sign up, sign in, sign out)  
+✔️ Protected routes with middleware  
+✔️ Type-safe database operations  
+✔️ Server-side rendering support
 
-## Contributing
+Features will be updated as development progresses.
 
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+---
 
-## Contact
+## 🏗️ Contributing
 
-charlieraph36@gmail.com
+Want to contribute? Follow these steps:
 
-## Acknowledgments
+1. **Fork the repository**
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+3. **Commit your changes**
+   ```bash
+   git commit -m "Add some amazing feature"
+   ```
+4. **Push to the branch**
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+5. **Open a Pull Request** 🚀
 
-- Next.js
-- Supabase
-- TypeScript community
+---
+
+## 📬 Contact
+
+📧 **Email:** [charlieraph36@gmail.com](mailto:charlieraph36@gmail.com)
+
+---
+
+## 🙌 Acknowledgments
+
+- [Next.js](https://nextjs.org/)
+- [Supabase](https://supabase.com/)
+- [TypeScript](https://www.typescriptlang.org/) Community
