@@ -117,6 +117,7 @@ The project uses **Supabase Authentication** for user management.
 - `lib/supabase/types.ts` → Database types
 - `lib/supabase/client.ts` → Supabase client setup
 - `lib/supabase/server.ts` → Server-side utilities
+- `lib/supabase/server-extended/` → Server-side functions
 
 ---
 
