@@ -57,16 +57,28 @@ yarn dev
 ## Project Structure
 
 ```
-├── lib/
-│   ├── supabase/
-│   │   ├── client.ts    # Supabase client configuration
-│   │   ├── server.ts    # Server-side Supabase utilities
-│   │   ├── types.ts     # TypeScript types for Supabase
-│   │   └── middleware.ts # Authentication middleware
-│   └── utils.ts         # Utility functions
-├── utils/
-│   ├── supabase.ts      # Supabase utilities
-│   └── auth.tsx         # Authentication components and hooks
+app/
+    layout.tsx
+    page.tsx
+    auth/
+    dashboard/
+components/
+    ...
+contexts/
+    AuthContext.tsx
+lib/
+    supabase/
+        server-extended/ # Supabase server-side functions
+        client.ts        # Supabase client configuration
+        server.ts        # Server-side Supabase utilities
+        types.ts         # TypeScript types for Supabase
+        middleware.ts    # Authentication middleware
+    utils.ts             # Utility functions
+public/
+    ...
+utils/
+    supabase.ts          # Supabase utilities
+    auth.tsx             # Authentication components and hooks
 ```
 
 ## Features
