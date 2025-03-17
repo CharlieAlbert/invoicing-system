@@ -6,13 +6,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
-  const { user, loading, error } = useAuth();
+  const { user, error } = useAuth();
 
   const router = useRouter();
-
-  // if (loading) {
-  //   return <div>Loading...</div>;
-  // }
 
   if (!user || error) {
     router.push("/auth/login");

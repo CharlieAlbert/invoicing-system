@@ -264,6 +264,50 @@ export type Database = {
           },
         ]
       }
+      product_variants: {
+        Row: {
+          cost_price: number | null
+          created_at: string | null
+          id: string
+          product_id: string
+          selling_price: number
+          size: number
+          sku: string | null
+          unit: string
+          updated_at: string | null
+        }
+        Insert: {
+          cost_price?: number | null
+          created_at?: string | null
+          id?: string
+          product_id: string
+          selling_price: number
+          size: number
+          sku?: string | null
+          unit: string
+          updated_at?: string | null
+        }
+        Update: {
+          cost_price?: number | null
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          selling_price?: number
+          size?: number
+          sku?: string | null
+          unit?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       production_materials: {
         Row: {
           batch_id: string | null
@@ -305,36 +349,27 @@ export type Database = {
       }
       products: {
         Row: {
-          cost_price: number | null
           created_at: string | null
           description: string | null
           id: string
           name: string
-          selling_price: number
           type: Database["public"]["Enums"]["product_type"]
-          unit: string
           updated_at: string | null
         }
         Insert: {
-          cost_price?: number | null
           created_at?: string | null
           description?: string | null
           id?: string
           name: string
-          selling_price: number
           type: Database["public"]["Enums"]["product_type"]
-          unit: string
           updated_at?: string | null
         }
         Update: {
-          cost_price?: number | null
           created_at?: string | null
           description?: string | null
           id?: string
           name?: string
-          selling_price?: number
           type?: Database["public"]["Enums"]["product_type"]
-          unit?: string
           updated_at?: string | null
         }
         Relationships: []

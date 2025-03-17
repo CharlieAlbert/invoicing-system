@@ -39,6 +39,12 @@ export function DashboardNav() {
       "--sidebar-width",
       isCollapsed ? "4rem" : "16rem"
     );
+
+    // Dispatch a custom event to notify the layout that the sidebar state changed
+    const event = new CustomEvent("sidebarStateChange", {
+      detail: { isCollapsed },
+    });
+    window.dispatchEvent(event);
   }, [isCollapsed]);
 
   return (
