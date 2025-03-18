@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,13 +42,32 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, X, Loader2, Edit, ChevronDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Plus,
+  X,
+  Loader2,
+  Package,
+  Paintbrush,
+  RefreshCw,
+  DollarSign,
+  Percent,
+  Tag,
+  Ruler,
+  ShoppingBag,
+  Info,
+  AlertCircle,
+} from "lucide-react";
 import {
   addProduct,
   getProducts,
 } from "@/lib/supabase/server-extended/products";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function ProductsPage() {
   // Types
@@ -78,6 +99,7 @@ export default function ProductsPage() {
     variants: [],
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("all");
 
   // Common units and sizes for quick addition
   const commonPaintSizes = [
@@ -199,7 +221,7 @@ export default function ProductsPage() {
     e.preventDefault();
 
     if (productData.variants.length === 0) {
-      toast.error("Please add atleast one product variant");
+      toast.error("Please add at least one product variant");
       return;
     }
 
@@ -214,10 +236,12 @@ export default function ProductsPage() {
       };
 
       const variants = productData.variants.map((variant) => ({
-        size: parseFloat(variant.size),
+        size: Number.parseFloat(variant.size),
         unit: variant.unit,
-        cost_price: variant.cost_price ? parseFloat(variant.cost_price) : null,
-        selling_price: parseFloat(variant.selling_price),
+        cost_price: variant.cost_price
+          ? Number.parseFloat(variant.cost_price)
+          : null,
+        selling_price: Number.parseFloat(variant.selling_price),
       }));
 
       await addProduct(product, variants);
@@ -245,22 +269,33 @@ export default function ProductsPage() {
     return margin.toFixed(2);
   };
 
+  // Filter products by type
+  const filteredProducts =
+    activeTab === "all"
+      ? products
+      : products.filter((product) => product.type === activeTab);
+
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Product Management</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Product Management</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage your inventory and product catalog
+          </p>
+        </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button size="lg" className="gap-2">
+              <Plus className="h-5 w-5" />
               Add Product
             </Button>
           </DialogTrigger>
 
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Add New Product</DialogTitle>
+              <DialogTitle className="text-xl">Add New Product</DialogTitle>
               <DialogDescription>
                 Create a new product with different size variants
               </DialogDescription>
@@ -269,9 +304,17 @@ export default function ProductsPage() {
             <form onSubmit={handleSubmit} className="space-y-6 py-4">
               {/* Product Details */}
               <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-8 w-1 bg-primary rounded-full" />
+                  <h3 className="text-lg font-medium">Product Information</h3>
+                </div>
+
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Product Name</Label>
+                    <Label htmlFor="name" className="flex items-center gap-1">
+                      <Tag className="h-4 w-4" />
+                      Product Name
+                    </Label>
                     <Input
                       id="name"
                       name="name"
@@ -283,7 +326,10 @@ export default function ProductsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="type">Product Type</Label>
+                    <Label htmlFor="type" className="flex items-center gap-1">
+                      <Package className="h-4 w-4" />
+                      Product Type
+                    </Label>
                     <Select
                       value={productData.type}
                       onValueChange={handleProductTypeChange}
@@ -293,15 +339,37 @@ export default function ProductsPage() {
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="paint">Paint</SelectItem>
-                        <SelectItem value="equipment">Equipment</SelectItem>
+                        <SelectItem
+                          value="paint"
+                          className="flex items-center gap-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Paintbrush className="h-4 w-4" />
+                            Paint
+                          </div>
+                        </SelectItem>
+                        <SelectItem
+                          value="equipment"
+                          className="flex items-center gap-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <ShoppingBag className="h-4 w-4" />
+                            Equipment
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label
+                    htmlFor="description"
+                    className="flex items-center gap-1"
+                  >
+                    <Info className="h-4 w-4" />
+                    Description
+                  </Label>
                   <Textarea
                     id="description"
                     name="description"
@@ -313,37 +381,62 @@ export default function ProductsPage() {
                 </div>
               </div>
 
+              <Separator />
+
               {/* Variants Section */}
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Label className="text-base font-medium">
-                    Product Variants
-                  </Label>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-8 w-1 bg-primary rounded-full" />
+                  <h3 className="text-lg font-medium">Product Variants</h3>
+                </div>
+
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  <div className="text-sm text-muted-foreground">
+                    {productData.variants.length > 0 ? (
+                      <span className="flex items-center gap-1">
+                        <Badge variant="outline" className="font-normal">
+                          {productData.variants.length}
+                        </Badge>
+                        variants added
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        <AlertCircle className="h-4 w-4" />
+                        No variants added yet
+                      </span>
+                    )}
+                  </div>
 
                   <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addCommonPaintSizes}
-                    >
-                      Add Standard Paint Sizes
-                    </Button>
+                    {productData.type === "paint" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addCommonPaintSizes}
+                        className="gap-1"
+                      >
+                        <Paintbrush className="h-4 w-4" />
+                        Add Standard Paint Sizes
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => addVariant()}
+                      className="gap-1"
                     >
-                      <Plus className="h-4 w-4 mr-1" />
+                      <Plus className="h-4 w-4" />
                       Add Variant
                     </Button>
                   </div>
                 </div>
 
                 {productData.variants.length === 0 ? (
-                  <div className="text-center py-8 border rounded-md bg-muted/20">
-                    <p className="text-muted-foreground">
+                  <div className="text-center py-8 border rounded-md bg-muted/20 border-dashed">
+                    <Ruler className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-muted-foreground font-medium">
                       No variants added yet
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -353,12 +446,15 @@ export default function ProductsPage() {
                 ) : (
                   <div className="space-y-3">
                     {productData.variants.map((variant, index) => (
-                      <Card key={index} className="relative">
+                      <Card
+                        key={index}
+                        className="relative overflow-hidden border-l-4 border-l-primary"
+                      >
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="absolute right-2 top-2"
+                          className="absolute right-2 top-2 h-7 w-7 rounded-full"
                           onClick={() => removeVariant(index)}
                         >
                           <X className="h-4 w-4" />
@@ -367,7 +463,13 @@ export default function ProductsPage() {
                         <CardContent className="pt-6">
                           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
                             <div className="space-y-2">
-                              <Label htmlFor={`size-${index}`}>Size</Label>
+                              <Label
+                                htmlFor={`size-${index}`}
+                                className="flex items-center gap-1"
+                              >
+                                <Ruler className="h-4 w-4" />
+                                Size
+                              </Label>
                               <Input
                                 id={`size-${index}`}
                                 name="size"
@@ -382,7 +484,13 @@ export default function ProductsPage() {
                             </div>
 
                             <div className="space-y-2">
-                              <Label htmlFor={`unit-${index}`}>Unit</Label>
+                              <Label
+                                htmlFor={`unit-${index}`}
+                                className="flex items-center gap-1"
+                              >
+                                <Tag className="h-4 w-4" />
+                                Unit
+                              </Label>
                               <Select
                                 value={variant.unit}
                                 onValueChange={(value) =>
@@ -404,8 +512,12 @@ export default function ProductsPage() {
                             </div>
 
                             <div className="space-y-2">
-                              <Label htmlFor={`cost-${index}`}>
-                                Cost Price (kes)
+                              <Label
+                                htmlFor={`cost-${index}`}
+                                className="flex items-center gap-1"
+                              >
+                                <DollarSign className="h-4 w-4" />
+                                Cost Price (KES)
                               </Label>
                               <Input
                                 id={`cost-${index}`}
@@ -420,8 +532,12 @@ export default function ProductsPage() {
                             </div>
 
                             <div className="space-y-2">
-                              <Label htmlFor={`selling-${index}`}>
-                                Selling Price (Kes)
+                              <Label
+                                htmlFor={`selling-${index}`}
+                                className="flex items-center gap-1"
+                              >
+                                <DollarSign className="h-4 w-4" />
+                                Selling Price (KES)
                               </Label>
                               <Input
                                 id={`selling-${index}`}
@@ -443,7 +559,7 @@ export default function ProductsPage() {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <DialogFooter className="pt-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -467,31 +583,60 @@ export default function ProductsPage() {
                     "Save Product"
                   )}
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
       {/* Product List */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Product List</CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchProducts}
-              disabled={loading}
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Refresh"
-              )}
-            </Button>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle className="text-xl">Product Catalog</CardTitle>
+              <CardDescription>
+                Manage your products and their variants
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchProducts}
+                disabled={loading}
+                className="gap-1"
+              >
+                <RefreshCw
+                  className={cn("h-4 w-4", loading && "animate-spin")}
+                />
+                {loading ? "Refreshing..." : "Refresh"}
+              </Button>
+            </div>
           </div>
         </CardHeader>
+
+        <Tabs
+          defaultValue="all"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="px-6"
+        >
+          <TabsList className="mb-4">
+            <TabsTrigger value="all" className="gap-1">
+              <Package className="h-4 w-4" />
+              All Products
+            </TabsTrigger>
+            <TabsTrigger value="paint" className="gap-1">
+              <Paintbrush className="h-4 w-4" />
+              Paint
+            </TabsTrigger>
+            <TabsTrigger value="equipment" className="gap-1">
+              <ShoppingBag className="h-4 w-4" />
+              Equipment
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <CardContent>
           {loading ? (
@@ -499,47 +644,99 @@ export default function ProductsPage() {
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
               <p className="text-muted-foreground">Loading products...</p>
             </div>
-          ) : products.length === 0 ? (
-            <div className="text-center py-10 border rounded-md bg-muted/20">
-              <p className="text-muted-foreground">No products found</p>
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-10 border rounded-md bg-muted/20 border-dashed">
+              <Package className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-muted-foreground font-medium">
+                No products found
+              </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Add your first product using the button above
+                {activeTab === "all"
+                  ? "Add your first product using the button above"
+                  : `No ${activeTab} products found. Add one using the button above`}
               </p>
             </div>
           ) : (
             <Accordion type="multiple" className="w-full">
-              {products.map((product) => (
-                <AccordionItem key={product.id} value={product.id || ""}>
-                  <AccordionTrigger className="hover:bg-muted/50 px-4 py-2 rounded-md">
+              {filteredProducts.map((product) => (
+                <AccordionItem
+                  key={product.id}
+                  value={product.id || ""}
+                  className="border rounded-md mb-3 overflow-hidden border-l-4 border-l-primary"
+                >
+                  <AccordionTrigger className="hover:bg-muted/50 px-4 py-3 rounded-md">
                     <div className="flex items-center justify-between w-full pr-4">
-                      <div className="font-medium">{product.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {product.variants.length}{" "}
-                        {product.variants.length === 1 ? "variant" : "variants"}
+                      <div className="flex items-center gap-3">
+                        {product.type === "paint" ? (
+                          <Paintbrush className="h-5 w-5 text-primary" />
+                        ) : (
+                          <ShoppingBag className="h-5 w-5 text-primary" />
+                        )}
+                        <div>
+                          <div className="font-medium text-left">
+                            {product.name}
+                          </div>
+                          {product.description && (
+                            <div className="text-xs text-muted-foreground text-left line-clamp-1 max-w-md">
+                              {product.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="font-normal">
+                          {product.variants.length}{" "}
+                          {product.variants.length === 1
+                            ? "variant"
+                            : "variants"}
+                        </Badge>
+                        <Badge
+                          variant={
+                            product.type === "paint" ? "default" : "secondary"
+                          }
+                          className="capitalize"
+                        >
+                          {product.type}
+                        </Badge>
                       </div>
                     </div>
                   </AccordionTrigger>
 
-                  <AccordionContent className="pt-2">
-                    <div className="rounded-md border overflow-hidden">
+                  <AccordionContent className="pt-2 px-4 pb-4">
+                    <div className="rounded-md border overflow-hidden bg-card">
                       <div className="overflow-x-auto">
                         <Table>
-                          <TableHeader>
+                          <TableHeader className="bg-muted/50">
                             <TableRow>
                               <TableHead className="font-semibold">
-                                Size
+                                <div className="flex items-center gap-1">
+                                  <Ruler className="h-4 w-4" />
+                                  Size
+                                </div>
                               </TableHead>
                               <TableHead className="font-semibold">
-                                Unit
+                                <div className="flex items-center gap-1">
+                                  <Tag className="h-4 w-4" />
+                                  Unit
+                                </div>
                               </TableHead>
                               <TableHead className="font-semibold text-right">
-                                Cost (Kes)
+                                <div className="flex items-center gap-1 justify-end">
+                                  <DollarSign className="h-4 w-4" />
+                                  Cost (KES)
+                                </div>
                               </TableHead>
                               <TableHead className="font-semibold text-right">
-                                Price (Kes)
+                                <div className="flex items-center gap-1 justify-end">
+                                  <DollarSign className="h-4 w-4" />
+                                  Price (KES)
+                                </div>
                               </TableHead>
                               <TableHead className="font-semibold text-right">
-                                Margin (%)
+                                <div className="flex items-center gap-1 justify-end">
+                                  <Percent className="h-4 w-4" />
+                                  Margin
+                                </div>
                               </TableHead>
                             </TableRow>
                           </TableHeader>
@@ -557,37 +754,63 @@ export default function ProductsPage() {
                                 </TableCell>
                               </TableRow>
                             ) : (
-                              product.variants.map((variant) => (
-                                <TableRow key={variant.id}>
-                                  <TableCell>{variant.size}</TableCell>
-                                  <TableCell>{variant.unit}</TableCell>
-                                  <TableCell className="text-right">
-                                    {variant.cost_price
-                                      ? `$${parseFloat(
-                                          variant.cost_price.toString()
-                                        ).toFixed(2)}`
-                                      : "-"}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    Kes
-                                    {parseFloat(
-                                      variant.selling_price.toString()
-                                    ).toFixed(2)}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    {variant.cost_price
-                                      ? `${calculateProfitMargin(
-                                          parseFloat(
-                                            variant.cost_price.toString()
-                                          ),
-                                          parseFloat(
-                                            variant.selling_price.toString()
-                                          )
-                                        )}%`
-                                      : "-"}
-                                  </TableCell>
-                                </TableRow>
-                              ))
+                              product.variants.map((variant) => {
+                                const costPrice = variant.cost_price
+                                  ? Number.parseFloat(
+                                      variant.cost_price.toString()
+                                    )
+                                  : 0;
+                                const sellingPrice = Number.parseFloat(
+                                  variant.selling_price.toString()
+                                );
+                                const margin = variant.cost_price
+                                  ? calculateProfitMargin(
+                                      costPrice,
+                                      sellingPrice
+                                    )
+                                  : "-";
+                                const marginValue = Number.parseFloat(
+                                  margin as string
+                                );
+
+                                return (
+                                  <TableRow
+                                    key={variant.id}
+                                    className="hover:bg-muted/30"
+                                  >
+                                    <TableCell className="font-medium">
+                                      {variant.size}
+                                    </TableCell>
+                                    <TableCell>{variant.unit}</TableCell>
+                                    <TableCell className="text-right">
+                                      {variant.cost_price
+                                        ? costPrice.toFixed(2)
+                                        : "-"}
+                                    </TableCell>
+                                    <TableCell className="text-right font-medium">
+                                      {sellingPrice.toFixed(2)}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      {variant.cost_price ? (
+                                        <Badge
+                                          variant={
+                                            marginValue < 20
+                                              ? "destructive"
+                                              : marginValue < 40
+                                              ? "secondary"
+                                              : "default"
+                                          }
+                                          className="ml-auto"
+                                        >
+                                          {margin}%
+                                        </Badge>
+                                      ) : (
+                                        "-"
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })
                             )}
                           </TableBody>
                         </Table>
@@ -595,7 +818,8 @@ export default function ProductsPage() {
                     </div>
 
                     {product.description && (
-                      <div className="mt-4 px-4 py-2 bg-muted/20 rounded-md">
+                      <div className="mt-4 px-4 py-3 bg-muted/20 rounded-md flex items-start gap-2">
+                        <Info className="h-4 w-4 text-muted-foreground mt-0.5" />
                         <p className="text-sm text-muted-foreground">
                           {product.description}
                         </p>

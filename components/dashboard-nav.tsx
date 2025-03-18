@@ -11,6 +11,7 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
+  { name: "Clients", href: "/dashboard/clients", icon: Users },
   { name: "Products", href: "/dashboard/products", icon: Package },
   { name: "Quotations", href: "/dashboard/quotations", icon: FileText },
   { name: "Invoices", href: "/dashboard/invoices", icon: FileSpreadsheet },

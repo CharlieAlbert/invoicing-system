@@ -53,8 +53,10 @@ export type Database = {
           contact_person: string | null
           created_at: string | null
           id: string
+          notes: string | null
           phone: string | null
           updated_at: string | null
+          website: string | null
         }
         Insert: {
           address?: string | null
@@ -63,8 +65,10 @@ export type Database = {
           contact_person?: string | null
           created_at?: string | null
           id?: string
+          notes?: string | null
           phone?: string | null
           updated_at?: string | null
+          website?: string | null
         }
         Update: {
           address?: string | null
@@ -73,8 +77,10 @@ export type Database = {
           contact_person?: string | null
           created_at?: string | null
           id?: string
+          notes?: string | null
           phone?: string | null
           updated_at?: string | null
+          website?: string | null
         }
         Relationships: []
       }

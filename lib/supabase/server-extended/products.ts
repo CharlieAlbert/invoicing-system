@@ -73,37 +73,27 @@ export const addProduct = async (
 export const getProducts = async () => {
   const supabase = await createClient();
 
-  // Get all products
-  const { data: products, error: productsError } = await supabase
-    .from("products")
-    .select("*")
-    .order("name");
+  try {
+    const { data: products, error } = await supabase
+      .from("products")
+      .select(
+        `
+        *,
+        variants:product_variants (*)
+      `
+      )
+      .order("name");
 
-  if (productsError) {
-    console.error("Error getting products:", productsError.message);
-    throw new Error("Error getting products");
+    if (error) throw error;
+
+    return products as (Product & { variants: ProductVariant[] })[];
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    throw new Error("Failed to fetch products");
   }
-
-  // Get all variants for these products
-  const { data: variants, error: variantsError } = await supabase
-    .from("product_variants")
-    .select("*");
-
-  if (variantsError) {
-    console.error("Error getting product variants:", variantsError.message);
-    throw new Error("Error getting product variants");
-  }
-
-  // Group variants by product_id
-  const productsWithVariants = products.map((product) => {
-    const productVariants = variants.filter((v) => v.product_id === product.id);
-    return { ...product, variants: productVariants };
-  });
-
-  return productsWithVariants;
 };
 
-export const getSingleProduct = async (id: string) => {
+export const getProductById = async (id: string) => {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -118,6 +108,65 @@ export const getSingleProduct = async (id: string) => {
   }
 
   return data;
+};
+
+export const editProduct = async (
+  id: string,
+  product: Product,
+  variants: ProductVariant[]
+) => {
+  const supabase = await createClient();
+
+  if (!product.name || !product.type) {
+    throw new Error("Product name and type are required");
+  }
+
+  if (!variants.length) {
+    throw new Error("At least one product variant is required");
+  }
+
+  for (const variant of variants) {
+    if (!variant.size || !variant.unit || !variant.selling_price) {
+      throw new Error(
+        "Size, unit, and selling price are required for all variants"
+      );
+    }
+  }
+
+  try {
+    const { data: updatedProduct, error: productError } = await supabase
+      .from("products")
+      .update(product)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (productError) throw productError;
+
+    const updatedVariants = await Promise.all(
+      variants.map(async (variant) => {
+        const { data, error } = await supabase
+          .from("product_variants")
+          .update(variant)
+          .eq("id", variant.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        return data;
+      })
+    );
+
+    return {
+      success: true,
+      message: "Product updated successfully",
+      product: { ...updatedProduct, variants: updatedVariants },
+    };
+  } catch (error: any) {
+    console.error("Error updating product with variants:", error.message);
+    throw new Error(error.message || "Error updating product");
+  }
 };
 
 export const deleteProduct = async (id: string) => {
