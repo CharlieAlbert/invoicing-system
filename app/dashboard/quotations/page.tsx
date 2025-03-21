@@ -37,6 +37,7 @@ import {
   addQuotationItems,
   getQuotationById,
   getQuotations,
+  getQuotationItems,
 } from "@/lib/supabase/server-extended/quotations";
 import { getClients } from "@/lib/supabase/server-extended/clients";
 import { getProducts } from "@/lib/supabase/server-extended/products";
@@ -78,13 +79,13 @@ import html2pdf from "html2pdf.js";
 export default function QuotationsPage() {
   // Types
   type QuotationItem = {
-    id: number;
-    product: string;
-    product_variant_id: string;
-    quantity: string;
-    price: string;
-    productName?: string;
-    variantName?: string;
+    created_at: string | null;
+    id: string;
+    price_per_unit: number | null;
+    product_id: string | null;
+    quantity: number;
+    quotation_id: string | null;
+    total_amount: number | null;
   };
 
   type Client = {
@@ -246,13 +247,13 @@ export default function QuotationsPage() {
     setQuotationItems((prev) => [
       ...prev,
       {
-        id: Date.now(),
-        product: selectedProductId,
-        product_variant_id: selectedVariantId,
-        quantity: formData.quantity,
-        price: formData.price,
-        productName: selectedProduct.name,
-        variantName: `${selectedVariant.size} ${selectedVariant.unit}`,
+        created_at: new Date().toISOString(),
+        id: Date.now().toString(),
+        price_per_unit: Number(formData.price),
+        product_id: selectedProductId,
+        quantity: Number(formData.quantity),
+        quotation_id: null,
+        total_amount: Number(formData.quantity) * Number(formData.price),
       },
     ]);
 
@@ -271,7 +272,7 @@ export default function QuotationsPage() {
     toast.success("Item added to quotation");
   };
 
-  const handleRemoveItem = (id: number) => {
+  const handleRemoveItem = (id: string) => {
     setQuotationItems((prev) => prev.filter((item) => item.id !== id));
     toast.success("Item removed from quotation");
   };
@@ -291,7 +292,8 @@ export default function QuotationsPage() {
       setLoading(true);
 
       const totalAmount = quotationItems.reduce(
-        (sum, item) => sum + Number(item.quantity) * Number(item.price),
+        (sum, item) =>
+          sum + Number(item.quantity) * Number(item.price_per_unit),
         0
       );
 
@@ -312,11 +314,10 @@ export default function QuotationsPage() {
 
       const items = quotationItems.map((item) => ({
         quotation_id: quotation.id,
-        product_id: item.product,
-        product_variant_id: item.product_variant_id,
+        product_id: item.product_id,
         quantity: Number(item.quantity),
-        price_per_unit: Number(item.price),
-        total_amount: Number(item.quantity) * Number(item.price),
+        price_per_unit: Number(item.price_per_unit),
+        total_amount: Number(item.quantity) * Number(item.price_per_unit),
       }));
 
       await addQuotationItems(items);
@@ -350,41 +351,58 @@ export default function QuotationsPage() {
   const handleGeneratePDF = async (quotationId: string) => {
     try {
       setLoading(true);
-      const quotationData = await getQuotationById(quotationId);
 
+      // Fetch quotation data
+      const quotationData: Quotation = await getQuotationById(quotationId);
       if (!quotationData) {
         toast.error("Quotation not found");
         return;
       }
 
-      const clientInfo = clients.find((c) => c.id === quotationData.client_id);
+      // Fetch client information
+      const clientInfo =
+        quotationData.client ||
+        clients.find((c) => c.id === quotationData.client_id);
       if (!clientInfo) {
         toast.error("Client information not found");
         return;
       }
 
-      let items = [
-        {
-          productName: "WALLMASTER WHITE",
-          variantName: "20x30 KGS",
-          quantity: "20",
-          price: "Ksh3,500.00",
-          total: "Ksh70,000.00",
-        },
-        {
-          productName: "WEATHERGUARD",
-          variantName: "6x4 KGS",
-          quantity: "6",
-          price: "Ksh2,300.00",
-          total: "Ksh13,800.00",
-        },
-      ];
+      // Fetch quotation items using the provided function
+      const quotationItems: QuotationItem[] = await getQuotationItems(
+        quotationId
+      );
 
+      // Map items to the format needed for the PDF
+      const items = quotationItems.map((item) => {
+        // Fetch product details if available
+        const productDetails: Product | undefined = products.find(
+          (p) => p.id === item.product_id
+        );
+
+        return {
+          productName: productDetails?.name || "Product",
+          variantName: productDetails?.variants || "Standard",
+          quantity: item.quantity.toString(),
+          price: formatCurrency(item.price_per_unit || 0),
+          total: formatCurrency(
+            item.total_amount || item.quantity * (item.price_per_unit || 0) || 0
+          ),
+        };
+      });
+
+      // If no items were found, warn the user
+      if (!items.length) {
+        toast.warning("No items found in this quotation");
+      }
+
+      // Calculate financial values
       const subtotal = formatCurrency(quotationData.total_amount || 0);
       const discount = formatCurrency(quotationData.discount || 0);
       const vat = quotationData.vat || 16;
       const grandTotal = formatCurrency(quotationData.final_amount || 0);
 
+      // Company information
       const companyInfo = {
         name: "ANKARDS COMPANY LIMITED",
         poBox: "209 - 00516",
@@ -394,32 +412,203 @@ export default function QuotationsPage() {
         email: "info@ankards.co.kr",
       };
 
-      // Request PDF generation
+      // Create HTML for the quotation
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Quotation</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              margin: 0;
+              padding: 20px;
+              color: #333;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+            }
+            .company-info {
+              margin-bottom: 20px;
+            }
+            .client-info {
+              margin-bottom: 30px;
+            }
+            .quotation-title {
+              font-size: 24px;
+              font-weight: bold;
+              margin-bottom: 20px;
+              text-align: center;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 30px;
+            }
+            th, td {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f2f2f2;
+            }
+            .summary {
+              margin-top: 30px;
+              text-align: right;
+            }
+            .summary-item {
+              margin-bottom: 10px;
+            }
+            .grand-total {
+              font-weight: bold;
+              font-size: 18px;
+              margin-top: 10px;
+            }
+            .status {
+              display: inline-block;
+              padding: 5px 10px;
+              border-radius: 4px;
+              font-weight: bold;
+              text-transform: uppercase;
+              margin-left: 10px;
+            }
+            .status-pending {
+              background-color: #fff3cd;
+              color: #856404;
+            }
+            .status-approved {
+              background-color: #d4edda;
+              color: #155724;
+            }
+            .status-rejected {
+              background-color: #f8d7da;
+              color: #721c24;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>${companyInfo.name}</h1>
+            <div>P.O. Box ${companyInfo.poBox}</div>
+            <div>Tel: ${companyInfo.tel}, Mobile: ${companyInfo.mobile}</div>
+            <div>Fax: ${companyInfo.fax}, Email: ${companyInfo.email}</div>
+          </div>
+          
+          <div class="quotation-title">
+            QUOTATION
+            ${
+              quotationData.status
+                ? `<span class="status status-${quotationData.status}">
+                ${quotationData.status.toUpperCase()}
+              </span>`
+                : ""
+            }
+          </div>
+          
+          <div class="client-info">
+            <strong>Client:</strong> ${clientInfo.company_name || "N/A"}<br>
+            <strong>Date:</strong> ${new Date(
+              quotationData.created_at || new Date()
+            ).toLocaleDateString()}<br>
+            <strong>Valid Until:</strong> ${
+              quotationData.valid_until
+                ? new Date(quotationData.valid_until).toLocaleDateString()
+                : "N/A"
+            }<br>
+            <strong>Quotation #:</strong> ${quotationId}
+          </div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                items.length
+                  ? items
+                      .map(
+                        (item) => `
+                <tr>
+                  <td>${item.productName}</td>
+                  <td>${item.variantName}</td>
+                  <td>${item.quantity}</td>
+                  <td>${item.price}</td>
+                  <td>${item.total}</td>
+                </tr>
+              `
+                      )
+                      .join("")
+                  : `
+                <tr>
+                  <td colspan="5" style="text-align: center;">No items in this quotation</td>
+                </tr>
+              `
+              }
+            </tbody>
+          </table>
+          
+          <div class="summary">
+            <div class="summary-item"><strong>Subtotal:</strong> ${subtotal}</div>
+            <div class="summary-item"><strong>Discount:</strong> ${discount}</div>
+            <div class="summary-item"><strong>VAT (${vat}%):</strong> ${formatCurrency(
+        ((quotationData.total_amount || 0) - (quotationData.discount || 0)) *
+          (vat / 100) || 0
+      )}</div>
+            <div class="grand-total"><strong>GRAND TOTAL:</strong> ${grandTotal}</div>
+          </div>
+          
+          <div style="margin-top: 50px">
+            <p><strong>Terms and Conditions:</strong></p>
+            <p>1. This quotation is valid until ${
+              quotationData.valid_until
+                ? new Date(quotationData.valid_until).toLocaleDateString()
+                : "30 days from the date of issue"
+            }.</p>
+            <p>2. Prices are subject to change without prior notice after the validity period.</p>
+            <p>3. Payment terms: 50% advance payment, balance before delivery.</p>
+            <p>4. Delivery time: 2-3 weeks after confirmation of order.</p>
+          </div>
+          
+          <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #777;">
+            <p>Generated on ${new Date().toLocaleString()}</p>
+            <p>This is a computer-generated document and does not require a signature.</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Request PDF generation with the HTML
       const response = await fetch("/api/generate-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          companyInfo,
-          items,
-          subtotal,
-          discount,
-          vat,
-          grandTotal,
-        }),
+        body: JSON.stringify({ html }),
       });
 
       if (!response.ok) throw new Error("Failed to generate PDF");
 
+      // Create download
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "quotation.pdf";
+      link.download = `quotation-${quotationId}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url); // Clean up to avoid memory leaks
+
+      toast.success("PDF generated successfully");
     } catch (error) {
-      console.error(error);
+      console.error("Error generating PDF:", error);
       toast.error("Failed to generate PDF");
     } finally {
       setLoading(false);
@@ -428,7 +617,8 @@ export default function QuotationsPage() {
 
   // Calculate subtotal
   const subtotal = quotationItems.reduce(
-    (sum, item) => sum + Number(item.quantity) * Number(item.price),
+    (sum, item) =>
+      sum + Number(item.quantity) * Number(item.price_per_unit || 0),
     0
   );
 
@@ -832,18 +1022,29 @@ export default function QuotationsPage() {
                           {quotationItems.map((item) => (
                             <TableRow key={item.id}>
                               <TableCell className="font-medium">
-                                {item.productName}
+                                {products.find((p) => p.id === item.product_id)
+                                  ?.name || "Unknown Product"}
                               </TableCell>
-                              <TableCell>{item.variantName}</TableCell>
+                              <TableCell>
+                                {
+                                  products.find((p) => p.id === item.product_id)
+                                    ?.variants?.[0]?.size
+                                }{" "}
+                                {
+                                  products.find((p) => p.id === item.product_id)
+                                    ?.variants?.[0]?.unit
+                                }
+                              </TableCell>
                               <TableCell className="text-right">
                                 {item.quantity}
                               </TableCell>
                               <TableCell className="text-right">
-                                {formatCurrency(Number(item.price))}
+                                {formatCurrency(Number(item.price_per_unit))}
                               </TableCell>
                               <TableCell className="text-right">
                                 {formatCurrency(
-                                  Number(item.quantity) * Number(item.price)
+                                  Number(item.quantity) *
+                                    Number(item.price_per_unit)
                                 )}
                               </TableCell>
                               <TableCell>

@@ -74,3 +74,16 @@ export const deleteQuotation = async (id: string) => {
   if (error) throw new Error("Failed to delete quotation");
   return { success: true, message: "Quotation deleted successfully" };
 };
+
+export const getQuotationItems = async (
+  id: string
+): Promise<QuotationItem[]> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("quotation_items")
+    .select()
+    .eq("quotation_id", id);
+
+  if (error) throw new Error("Failed to fetch quotation items");
+  return data as QuotationItem[];
+};
