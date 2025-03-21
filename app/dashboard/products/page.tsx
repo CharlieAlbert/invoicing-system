@@ -73,18 +73,24 @@ export default function ProductsPage() {
   // Types
   type ProductVariant = {
     id?: string;
-    size: string;
+    product_id?: string;
+    size: number;
     unit: string;
-    cost_price: string;
-    selling_price: string;
+    cost_price: number | null;
+    selling_price: number;
+    sku?: string | null;
+    created_at?: string | null;
+    updated_at?: string | null;
     isNew?: boolean;
   };
 
   type Product = {
     id?: string;
     name: string;
-    description: string;
+    description: string | null;
     type: "paint" | "equipment";
+    created_at?: string | null;
+    updated_at?: string | null;
     variants: ProductVariant[];
   };
 
@@ -94,7 +100,7 @@ export default function ProductsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [productData, setProductData] = useState<Product>({
     name: "",
-    description: "",
+    description: null,
     type: "paint",
     variants: [],
   });
@@ -103,9 +109,9 @@ export default function ProductsPage() {
 
   // Common units and sizes for quick addition
   const commonPaintSizes = [
-    { size: "20", unit: "Litre" },
-    { size: "4", unit: "Litre" },
-    { size: "1", unit: "Litre" },
+    { size: 20, unit: "Litre" },
+    { size: 4, unit: "Litre" },
+    { size: 1, unit: "Litre" },
   ];
 
   const commonUnits = ["Litre", "Kg", "Piece", "Box", "Roll", "Sheet"];
@@ -128,16 +134,16 @@ export default function ProductsPage() {
   };
 
   // Add a new empty variant to the form
-  const addVariant = (preset?: { size: string; unit: string }) => {
+  const addVariant = (preset?: { size: number; unit: string }) => {
     setProductData((prev) => ({
       ...prev,
       variants: [
         ...prev.variants,
         {
-          size: preset?.size || "",
+          size: preset?.size || 0,
           unit: preset?.unit || "",
-          cost_price: "",
-          selling_price: "",
+          cost_price: null,
+          selling_price: 0,
           isNew: true,
         },
       ],
@@ -153,8 +159,8 @@ export default function ProductsPage() {
         ...commonPaintSizes.map((size) => ({
           size: size.size,
           unit: size.unit,
-          cost_price: "",
-          selling_price: "",
+          cost_price: null,
+          selling_price: 0,
           isNew: true,
         })),
       ],
@@ -180,25 +186,55 @@ export default function ProductsPage() {
   // Handle changes in variant forms
   const handleVariantChange = (
     index: number,
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const { name, value } = e.target;
-    setProductData((prev) => ({
-      ...prev,
-      variants: prev.variants.map((variant, i) =>
-        i === index ? { ...variant, [name]: value } : variant
-      ),
-    }));
+
+    setProductData((prev) => {
+      const updatedVariants = [...prev.variants];
+
+      if (name === "size") {
+        updatedVariants[index] = {
+          ...updatedVariants[index],
+          [name]: value === "" ? 0 : Number(value),
+        };
+      } else if (name === "cost_price") {
+        updatedVariants[index] = {
+          ...updatedVariants[index],
+          [name]: value === "" ? null : Number(value),
+        };
+      } else if (name === "selling_price") {
+        updatedVariants[index] = {
+          ...updatedVariants[index],
+          [name]: value === "" ? 0 : Number(value),
+        };
+      } else {
+        updatedVariants[index] = {
+          ...updatedVariants[index],
+          [name]: value,
+        };
+      }
+
+      return {
+        ...prev,
+        variants: updatedVariants,
+      };
+    });
   };
 
   // Handle select change for variant unit
-  const handleVariantUnitChange = (index: number, value: string) => {
-    setProductData((prev) => ({
-      ...prev,
-      variants: prev.variants.map((variant, i) =>
-        i === index ? { ...variant, unit: value } : variant
-      ),
-    }));
+  const handleUnitChange = (index: number, value: string) => {
+    setProductData((prev) => {
+      const updatedVariants = [...prev.variants];
+      updatedVariants[index] = {
+        ...updatedVariants[index],
+        unit: value,
+      };
+      return {
+        ...prev,
+        variants: updatedVariants,
+      };
+    });
   };
 
   // Handle product type selection
@@ -210,7 +246,7 @@ export default function ProductsPage() {
   const resetForm = () => {
     setProductData({
       name: "",
-      description: "",
+      description: null,
       type: "paint",
       variants: [],
     });
@@ -236,12 +272,12 @@ export default function ProductsPage() {
       };
 
       const variants = productData.variants.map((variant) => ({
-        size: Number.parseFloat(variant.size),
+        size: Number.parseFloat(variant.size.toString()),
         unit: variant.unit,
         cost_price: variant.cost_price
-          ? Number.parseFloat(variant.cost_price)
+          ? Number.parseFloat(variant.cost_price.toString())
           : null,
-        selling_price: Number.parseFloat(variant.selling_price),
+        selling_price: Number.parseFloat(variant.selling_price.toString()),
       }));
 
       await addProduct(product, variants);
@@ -373,7 +409,7 @@ export default function ProductsPage() {
                   <Textarea
                     id="description"
                     name="description"
-                    value={productData.description}
+                    value={productData.description || ""}
                     onChange={handleProductChange}
                     placeholder="Product description"
                     rows={2}
@@ -494,7 +530,7 @@ export default function ProductsPage() {
                               <Select
                                 value={variant.unit}
                                 onValueChange={(value) =>
-                                  handleVariantUnitChange(index, value)
+                                  handleUnitChange(index, value)
                                 }
                                 required
                               >
@@ -525,7 +561,7 @@ export default function ProductsPage() {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                value={variant.cost_price}
+                                value={variant.cost_price || ""}
                                 onChange={(e) => handleVariantChange(index, e)}
                                 placeholder="0.00"
                               />

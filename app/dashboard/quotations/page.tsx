@@ -351,7 +351,6 @@ export default function QuotationsPage() {
   const handleGeneratePDF = async (quotationId: string) => {
     try {
       setLoading(true);
-      toast.info("Generating PDF via server...");
 
       // Fetch quotation data
       const quotationData: Quotation = await getQuotationById(quotationId);
@@ -383,7 +382,7 @@ export default function QuotationsPage() {
 
         return {
           productName: productDetails?.name || "Product",
-          variantName: productDetails?.variants?.[0]?.unit || "Standard",
+          variantName: productDetails?.variants || "Standard",
           quantity: item.quantity.toString(),
           price: formatCurrency(item.price_per_unit || 0),
           total: formatCurrency(
@@ -413,181 +412,419 @@ export default function QuotationsPage() {
         email: "info@ankards.co.kr",
       };
 
-      toast.info("Generating PDF document...");
-
       // Create HTML for the quotation
-      const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Quotation</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              margin: 0;
-              padding: 20px;
-              color: #333;
-            }
-            .header {
-              text-align: center;
-              margin-bottom: 30px;
-            }
-            .company-info {
-              margin-bottom: 20px;
-            }
-            .client-info {
-              margin-bottom: 30px;
-            }
-            .quotation-title {
-              font-size: 24px;
-              font-weight: bold;
-              margin-bottom: 20px;
-              text-align: center;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 30px;
-            }
-            th, td {
-              border: 1px solid #ddd;
-              padding: 8px;
-              text-align: left;
-            }
-            th {
-              background-color: #f2f2f2;
-            }
-            .summary {
-              margin-top: 30px;
-              text-align: right;
-            }
-            .summary-item {
-              margin-bottom: 10px;
-            }
-            .grand-total {
-              font-weight: bold;
-              font-size: 18px;
-              margin-top: 10px;
-            }
-            .status {
-              display: inline-block;
-              padding: 5px 10px;
-              border-radius: 4px;
-              font-weight: bold;
-              text-transform: uppercase;
-              margin-left: 10px;
-            }
-            .status-pending {
-              background-color: #fff3cd;
-              color: #856404;
-            }
-            .status-approved {
-              background-color: #d4edda;
-              color: #155724;
-            }
-            .status-rejected {
-              background-color: #f8d7da;
-              color: #721c24;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>${companyInfo.name}</h1>
-            <div>P.O. Box ${companyInfo.poBox}</div>
-            <div>Tel: ${companyInfo.tel}, Mobile: ${companyInfo.mobile}</div>
-            <div>Fax: ${companyInfo.fax}, Email: ${companyInfo.email}</div>
-          </div>
-          
-          <div class="quotation-title">
-            QUOTATION
-            ${
-              quotationData.status
-                ? `<span class="status status-${quotationData.status}">
-                ${quotationData.status.toUpperCase()}
-              </span>`
-                : ""
-            }
-          </div>
-          
-          <div class="client-info">
-            <strong>Client:</strong> ${clientInfo.company_name || "N/A"}<br>
-            <strong>Date:</strong> ${new Date(
-              quotationData.created_at || new Date()
-            ).toLocaleDateString()}<br>
-            <strong>Valid Until:</strong> ${
-              quotationData.valid_until
-                ? new Date(quotationData.valid_until).toLocaleDateString()
-                : "N/A"
-            }<br>
-            <strong>Quotation #:</strong> ${quotationId}
-          </div>
-          
-          <table>
-            <thead>
-              <tr>
-                <th>Item</th>
-                <th>Description</th>
-                <th>Quantity</th>
-                <th>Unit Price</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${
-                items.length
-                  ? items
-                      .map(
-                        (item) => `
-                <tr>
-                  <td>${item.productName}</td>
-                  <td>${item.variantName}</td>
-                  <td>${item.quantity}</td>
-                  <td>${item.price}</td>
-                  <td>${item.total}</td>
-                </tr>
-              `
-                      )
-                      .join("")
-                  : `
-                <tr>
-                  <td colspan="5" style="text-align: center;">No items in this quotation</td>
-                </tr>
-              `
-              }
-            </tbody>
-          </table>
-          
-          <div class="summary">
-            <div class="summary-item"><strong>Subtotal:</strong> ${subtotal}</div>
-            <div class="summary-item"><strong>Discount:</strong> ${discount}</div>
-            <div class="summary-item"><strong>VAT (${vat}%):</strong> ${formatCurrency(
-        ((quotationData.total_amount || 0) - (quotationData.discount || 0)) *
-          (vat / 100) || 0
-      )}</div>
-            <div class="grand-total"><strong>GRAND TOTAL:</strong> ${grandTotal}</div>
-          </div>
-          
-          <div style="margin-top: 50px">
-            <p><strong>Terms and Conditions:</strong></p>
-            <p>1. This quotation is valid until ${
-              quotationData.valid_until
-                ? new Date(quotationData.valid_until).toLocaleDateString()
-                : "30 days from the date of issue"
-            }.</p>
-            <p>2. Prices are subject to change without prior notice after the validity period.</p>
-            <p>3. Payment terms: 50% advance payment, balance before delivery.</p>
-            <p>4. Delivery time: 2-3 weeks after confirmation of order.</p>
-          </div>
-          
-          <div style="margin-top: 30px; text-align: center; font-size: 12px; color: #777;">
-            <p>Generated on ${new Date().toLocaleString()}</p>
-            <p>This is a computer-generated document and does not require a signature.</p>
-          </div>
-        </body>
-        </html>
-      `;
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Quotation</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+    
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      background-color: #f9f9f9;
+    }
+    
+    .quotation-container {
+      max-width: 800px;
+      margin: 20px auto;
+      background-color: white;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      padding: 40px;
+      border-radius: 8px;
+      position: relative;
+    }
+    
+    .watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      font-size: 100px;
+      opacity: 0.03;
+      color: #000;
+      pointer-events: none;
+      z-index: 0;
+      font-weight: bold;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #2c3e50;
+      padding-bottom: 20px;
+    }
+    
+    .company-logo {
+      font-size: 28px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    
+    .company-info {
+      text-align: right;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    .quotation-title {
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #2c3e50;
+      text-align: center;
+      position: relative;
+    }
+    
+    .quotation-title:after {
+      content: "";
+      display: block;
+      width: 60px;
+      height: 3px;
+      background-color: #3498db;
+      margin: 10px auto;
+    }
+    
+    .reference-info {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 30px;
+      border-left: 4px solid #3498db;
+    }
+    
+    .client-info, .quotation-details {
+      display: inline-block;
+      vertical-align: top;
+      width: 48%;
+    }
+    
+    .quotation-details {
+      text-align: right;
+    }
+    
+    .info-row {
+      margin-bottom: 8px;
+    }
+    
+    .info-label {
+      font-weight: 500;
+      color: #7f8c8d;
+      margin-right: 8px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 30px 0;
+      font-size: 14px;
+    }
+    
+    th {
+      background-color: #2c3e50;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: 500;
+    }
+    
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f5f5f5;
+    }
+    
+    .summary {
+      margin-top: 30px;
+      text-align: right;
+      margin-left: auto;
+      width: 300px;
+    }
+    
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding: 5px 0;
+    }
+    
+    .grand-total {
+      font-weight: bold;
+      font-size: 18px;
+      margin-top: 10px;
+      background-color: #f1f8ff;
+      padding: 10px;
+      border-radius: 4px;
+      border-top: 2px solid #3498db;
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-left: 10px;
+    }
+    
+    .status-pending {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    
+    .status-approved {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    .status-rejected {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    
+    .terms-container {
+      margin-top: 40px;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-radius: 6px;
+    }
+    
+    .terms-heading {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+    
+    .terms-list {
+      margin: 0;
+      padding-left: 20px;
+    }
+    
+    .terms-list li {
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .signature-section {
+      margin-top: 50px;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .signature-box {
+      width: 45%;
+    }
+    
+    .signature-line {
+      border-top: 1px solid #333;
+      margin-top: 50px;
+      position: relative;
+    }
+    
+    .signature-label {
+      position: absolute;
+      top: 5px;
+      font-size: 12px;
+      color: #7f8c8d;
+    }
+    
+    .stamp-box {
+      border: 2px dashed #ddd;
+      width: 120px;
+      height: 120px;
+      margin: 0 auto;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #bbb;
+      font-size: 12px;
+      text-align: center;
+    }
+    
+    .footer {
+      margin-top: 60px;
+      text-align: center;
+      font-size: 12px;
+      color: #7f8c8d;
+      border-top: 1px solid #eee;
+      padding-top: 20px;
+    }
+    
+    .no-items {
+      text-align: center;
+      padding: 20px;
+      font-style: italic;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <div class="quotation-container">
+    <div class="watermark">${companyInfo.name}</div>
+    
+    <div class="header">
+      <div class="company-logo">${companyInfo.name}</div>
+      <div class="company-info">
+        <div>P.O. Box ${companyInfo.poBox}</div>
+        <div>Tel: ${companyInfo.tel} | Mobile: ${companyInfo.mobile}</div>
+        <div>Fax: ${companyInfo.fax}</div>
+        <div>Email: ${companyInfo.email}</div>
+      </div>
+    </div>
+    
+    <div class="quotation-title">
+      QUOTATION
+      ${
+        quotationData.status
+          ? `<span class="status status-${quotationData.status}">
+          ${quotationData.status.toUpperCase()}
+        </span>`
+          : ""
+      }
+    </div>
+    
+    <div class="reference-info">
+      <div class="client-info">
+        <div class="info-row">
+          <span class="info-label">Client:</span>
+          <span>${clientInfo.company_name || "N/A"}</span>
+        </div>
+      </div>
+      
+      <div class="quotation-details">
+        <div class="info-row">
+          <span class="info-label">Quotation #:</span>
+          <span>${quotationId}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Date:</span>
+          <span>${new Date(
+            quotationData.created_at || new Date()
+          ).toLocaleDateString()}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Valid Until:</span>
+          <span>${
+            quotationData.valid_until
+              ? new Date(quotationData.valid_until).toLocaleDateString()
+              : "N/A"
+          }</span>
+        </div>
+      </div>
+    </div>
+    
+    <table>
+      <thead>
+        <tr>
+          <th width="5%">#</th>
+          <th width="25%">Item</th>
+          <th width="30%">Description</th>
+          <th width="10%">Qty</th>
+          <th width="15%">Unit Price</th>
+          <th width="15%">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${
+          items.length
+            ? items
+                .map(
+                  (item, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${item.productName}</td>
+            <td>${item.variantName}</td>
+            <td>${item.quantity}</td>
+            <td>${item.price}</td>
+            <td>${item.total}</td>
+          </tr>
+        `
+                )
+                .join("")
+            : `
+          <tr>
+            <td colspan="6" class="no-items">No items in this quotation</td>
+          </tr>
+        `
+        }
+      </tbody>
+    </table>
+    
+    <div class="summary">
+      <div class="summary-item">
+        <span>Subtotal:</span>
+        <span>${subtotal}</span>
+      </div>
+      <div class="summary-item">
+        <span>Discount:</span>
+        <span>${discount}</span>
+      </div>
+      <div class="summary-item">
+        <span>VAT (${vat}%):</span>
+        <span>${formatCurrency(
+          ((quotationData.total_amount || 0) - (quotationData.discount || 0)) *
+            (vat / 100) || 0
+        )}</span>
+      </div>
+      <div class="grand-total">
+        <span>GRAND TOTAL:</span>
+        <span>${grandTotal}</span>
+      </div>
+    </div>
+    
+    <div class="terms-container">
+      <div class="terms-heading">Terms and Conditions:</div>
+      <ol class="terms-list">
+        <li>This quotation is valid until ${
+          quotationData.valid_until
+            ? new Date(quotationData.valid_until).toLocaleDateString()
+            : "30 days from the date of issue"
+        }.</li>
+        <li>Prices are subject to change without prior notice after the validity period.</li>
+        <li>Payment terms: 50% advance payment, balance before delivery.</li>
+        <li>Delivery time: 2-3 weeks after confirmation of order.</li>
+        <li>All prices are inclusive of applicable taxes unless otherwise stated.</li>
+        <li>Warranty as per manufacturer's terms and conditions.</li>
+      </ol>
+    </div>
+    
+    <div class="signature-section">
+      <div class="signature-box">
+        <div class="signature-line">
+          <span class="signature-label">Authorized Signature</span>
+        </div>
+        <p style="margin-top: 10px; font-size: 14px;">For ${companyInfo.name}</p>
+      </div>
+      
+      <div class="signature-box">
+        <div class="signature-line">
+          <span class="signature-label">Customer Acceptance</span>
+        </div>
+        <p style="margin-top: 10px; font-size: 14px;">I/We accept the terms and conditions</p>
+      </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px;">
+      <div class="stamp-box">Company Stamp Here</div>
+    </div>
+    
+    <div class="footer">
+      <p>Generated on ${new Date().toLocaleString()}</p>
+      <p>This is a computer-generated document. Valid when stamped and signed.</p>
+    </div>
+  </div>
+</body>
+</html>`
 
       // Request PDF generation with the HTML
       const response = await fetch("/api/generate-pdf", {
@@ -596,10 +833,7 @@ export default function QuotationsPage() {
         body: JSON.stringify({ html }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Failed to generate PDF: ${errorData.details || response.statusText || 'Unknown error'}`);
-      }
+      if (!response.ok) throw new Error("Failed to generate PDF");
 
       // Create download
       const blob = await response.blob();
@@ -615,7 +849,7 @@ export default function QuotationsPage() {
       toast.success("PDF generated successfully");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toast.error(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error("Failed to generate PDF");
     } finally {
       setLoading(false);
     }
@@ -1246,10 +1480,10 @@ export default function QuotationsPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
+                                  className="h-8 w-8"
                                   onClick={() =>
                                     handleGeneratePDF(quotation.id)
                                   }
-                                  className="h-8 w-8"
                                 >
                                   <Download className="h-4 w-4" />
                                   <span className="sr-only">Download</span>
