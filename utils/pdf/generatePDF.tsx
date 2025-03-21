@@ -160,7 +160,6 @@ export const generatePDF = async (
       logging: false,
       removeContainer: true,
       letterRendering: true,
-      // Force background colors to be opaque
       backgroundColor: "#ffffff",
     },
     jsPDF: {
@@ -172,13 +171,43 @@ export const generatePDF = async (
   };
 
   try {
+    console.log("Generating PDF with html2pdf.js...");
     await html2pdf().from(element).set(opt).save();
+    console.log("Client-side PDF generation completed");
     // Remove the temporary element
     document.body.removeChild(element);
   } catch (error) {
     console.error("Error generating PDF:", error);
-    // Remove the temporary element
-    document.body.removeChild(element);
-    throw error;
+    
+    // Try server-side generation as fallback
+    try {
+      console.log("Attempting server-side PDF generation as fallback...");
+      const response = await fetch("/api/generate-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html: element.outerHTML }),
+      });
+      
+      if (!response.ok) throw new Error("Server-side PDF generation failed");
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `quotation-${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      console.log("Server-side PDF generation completed");
+    } catch (serverError) {
+      console.error("Server-side PDF generation failed:", serverError);
+      throw new Error("PDF generation failed: " + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      // Remove the temporary element
+      if (document.body.contains(element)) {
+        document.body.removeChild(element);
+      }
+    }
   }
 };

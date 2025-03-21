@@ -351,6 +351,7 @@ export default function QuotationsPage() {
   const handleGeneratePDF = async (quotationId: string) => {
     try {
       setLoading(true);
+      toast.info("Generating PDF via server...");
 
       // Fetch quotation data
       const quotationData: Quotation = await getQuotationById(quotationId);
@@ -382,7 +383,7 @@ export default function QuotationsPage() {
 
         return {
           productName: productDetails?.name || "Product",
-          variantName: productDetails?.variants || "Standard",
+          variantName: productDetails?.variants?.[0]?.unit || "Standard",
           quantity: item.quantity.toString(),
           price: formatCurrency(item.price_per_unit || 0),
           total: formatCurrency(
@@ -411,6 +412,8 @@ export default function QuotationsPage() {
         fax: "+324 721 581 999",
         email: "info@ankards.co.kr",
       };
+
+      toast.info("Generating PDF document...");
 
       // Create HTML for the quotation
       const html = `
@@ -593,7 +596,10 @@ export default function QuotationsPage() {
         body: JSON.stringify({ html }),
       });
 
-      if (!response.ok) throw new Error("Failed to generate PDF");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Failed to generate PDF: ${errorData.details || response.statusText || 'Unknown error'}`);
+      }
 
       // Create download
       const blob = await response.blob();
@@ -609,7 +615,7 @@ export default function QuotationsPage() {
       toast.success("PDF generated successfully");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toast.error("Failed to generate PDF");
+      toast.error(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -1240,10 +1246,10 @@ export default function QuotationsPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8"
                                   onClick={() =>
                                     handleGeneratePDF(quotation.id)
                                   }
+                                  className="h-8 w-8"
                                 >
                                   <Download className="h-4 w-4" />
                                   <span className="sr-only">Download</span>
