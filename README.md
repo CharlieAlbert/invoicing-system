@@ -134,7 +134,9 @@ Server-side **CRUD operations** for Supabase are in:
 ✔️ User authentication (sign up, sign in, sign out)  
 ✔️ Protected routes with middleware  
 ✔️ Type-safe database operations  
-✔️ Server-side rendering support
+✔️ Server-side rendering support  
+✔️ PDF generation for invoices and quotations with server-side rendering  
+✔️ Reliable document generation with error handling and recovery
 
 Features will be updated as development progresses.
 
