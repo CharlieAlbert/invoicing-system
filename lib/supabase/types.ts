@@ -84,6 +84,143 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          invoice_id: string
+          price_per_unit: number
+          product_id: string
+          product_variant_id: string | null
+          quantity: number
+          total_amount: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invoice_id: string
+          price_per_unit: number
+          product_id: string
+          product_variant_id?: string | null
+          quantity: number
+          total_amount: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invoice_id?: string
+          price_per_unit?: number
+          product_id?: string
+          product_variant_id?: string | null
+          quantity?: number
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_product_variant_id_fkey"
+            columns: ["product_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          amount_paid: number | null
+          client_id: string
+          created_at: string | null
+          created_by: string | null
+          discount: number | null
+          due_date: string
+          final_amount: number
+          id: string
+          invoice_date: string
+          invoice_number: string | null
+          notes: string | null
+          payment_date: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
+          quotation_id: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          total_amount: number
+          vat: number | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          client_id: string
+          created_at?: string | null
+          created_by?: string | null
+          discount?: number | null
+          due_date: string
+          final_amount: number
+          id?: string
+          invoice_date?: string
+          invoice_number?: string | null
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          quotation_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          total_amount: number
+          vat?: number | null
+        }
+        Update: {
+          amount_paid?: number | null
+          client_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          discount?: number | null
+          due_date?: string
+          final_amount?: number
+          id?: string
+          invoice_date?: string
+          invoice_number?: string | null
+          notes?: string | null
+          payment_date?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          quotation_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          total_amount?: number
+          vat?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       new_batch: {
         Row: {
           batch_number: string
@@ -386,6 +523,7 @@ export type Database = {
           id: string
           price_per_unit: number | null
           product_id: string | null
+          product_variant_id: string | null
           quantity: number
           quotation_id: string | null
           total_amount: number | null
@@ -395,6 +533,7 @@ export type Database = {
           id?: string
           price_per_unit?: number | null
           product_id?: string | null
+          product_variant_id?: string | null
           quantity: number
           quotation_id?: string | null
           total_amount?: number | null
@@ -404,6 +543,7 @@ export type Database = {
           id?: string
           price_per_unit?: number | null
           product_id?: string | null
+          product_variant_id?: string | null
           quantity?: number
           quotation_id?: string | null
           total_amount?: number | null
@@ -414,6 +554,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_items_product_variant_id_fkey"
+            columns: ["product_variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
             referencedColumns: ["id"]
           },
           {
@@ -599,10 +746,26 @@ export type Database = {
         }
         Returns: boolean
       }
+      generate_invoice_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       account_role: "admin" | "staff"
+      invoice_status:
+        | "pending"
+        | "paid"
+        | "overdue"
+        | "partially_paid"
+        | "cancelled"
       order_status: "confirmed" | "processing" | "delivered" | "cancelled"
+      payment_method:
+        | "cash"
+        | "bank_transfer"
+        | "credit_card"
+        | "check"
+        | "mobile_money"
       payment_status: "pending" | "partial" | "paid"
       product_type: "paint" | "equipment"
       quotation_status: "pending" | "approved" | "rejected"
