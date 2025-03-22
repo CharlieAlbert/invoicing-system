@@ -106,6 +106,7 @@ import {
   getInvoices,
 } from "@/lib/supabase/server-extended/invoices";
 import { Database } from "@/lib/supabase/types";
+import { InvoiceSummaryDialog } from "@/components/invoices/InvoiceSummaryDialog";
 
 export default function InvoicesPage() {
   // Types
@@ -214,9 +215,11 @@ export default function InvoicesPage() {
     invoice_date: new Date(),
     due_date: new Date(new Date().setDate(new Date().getDate() + 30)), // Default 30 days
     discount: 0,
-    vat: 7.5, // Default VAT rate
+    vat: 16, // Default VAT rate
     notes: "",
   });
+
+  const [invoiceSummaryOpen, setInvoiceSummaryOpen] = useState(false);
 
   const { user } = useAuth();
 
@@ -979,7 +982,7 @@ export default function InvoicesPage() {
       invoice_date: new Date(),
       due_date: new Date(new Date().setDate(new Date().getDate() + 30)),
       discount: 0,
-      vat: 7.5,
+      vat: 16,
       notes: "",
     });
   };
@@ -1123,12 +1126,32 @@ export default function InvoicesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Invoice Management</h1>
-          <p className="text-muted-foreground mt-1">
-            Create and manage invoices for your clients
-          </p>
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center space-x-4">
+          <h1 className="text-2xl font-semibold">Invoices</h1>
+          <Badge variant="outline" className="ml-2">
+            {invoices.length}
+          </Badge>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1"
+            onClick={() => setInvoiceSummaryOpen(true)}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            <span>Invoice Summary</span>
+          </Button>
+          {/* <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1"
+            onClick={() => setOpenAddInvoice(true)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>Add Invoice</span>
+          </Button> */}
         </div>
       </div>
 
@@ -1695,7 +1718,9 @@ export default function InvoicesPage() {
               {invoicesLoading ? (
                 <div className="text-center py-10">
                   <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-                  <p className="text-muted-foreground">Loading invoices...</p>
+                  <p className="text-muted-foreground">
+                    Loading invoices...
+                  </p>
                 </div>
               ) : filteredInvoices.length === 0 ? (
                 <div className="text-center py-10 border rounded-md bg-muted/20 border-dashed">
@@ -2198,6 +2223,12 @@ export default function InvoicesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Invoice Summary Dialog */}
+      <InvoiceSummaryDialog
+        open={invoiceSummaryOpen}
+        onOpenChange={setInvoiceSummaryOpen}
+      />
     </div>
   );
 }

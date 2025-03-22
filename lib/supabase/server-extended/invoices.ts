@@ -232,7 +232,7 @@ export async function addInvoiceItem(
 
     // Calculate new totals
     const newTotalAmount = (invoice.total_amount || 0) + item.total_amount;
-    const vatRate = 0.075; // Assuming 7.5% VAT, adjust as needed
+    const vatRate = 0.16; // Assuming 16% VAT, adjust as needed
     const newVat = newTotalAmount * vatRate;
     const newFinalAmount = newTotalAmount + newVat - (invoice.discount || 0);
 
@@ -325,7 +325,7 @@ export async function updateInvoiceItem(
 
     // Calculate new invoice totals
     const newInvoiceTotalAmount = (invoice.total_amount || 0) + totalDifference;
-    const vatRate = 0.075; // Assuming 7.5% VAT, adjust as needed
+    const vatRate = 0.16; // Assuming 16% VAT, adjust as needed
     const newVat = newInvoiceTotalAmount * vatRate;
     const newFinalAmount =
       newInvoiceTotalAmount + newVat - (invoice.discount || 0);
@@ -406,7 +406,7 @@ export async function deleteInvoiceItem(
 
     // Calculate new invoice totals
     const newTotalAmount = (invoice.total_amount || 0) - item.total_amount;
-    const vatRate = 0.075; // Assuming 7.5% VAT, adjust as needed
+    const vatRate = 0.16; // Assuming 16% VAT, adjust as needed
     const newVat = newTotalAmount * vatRate;
     const newFinalAmount = newTotalAmount + newVat - (invoice.discount || 0);
 
@@ -651,6 +651,48 @@ export async function getInvoices(): Promise<{
     };
   } catch (error) {
     console.error("Error in getInvoices:", error);
+    return {
+      success: false,
+      error: `Unexpected error: ${(error as Error).message}`,
+    };
+  }
+}
+
+export async function getInvoicesByClientId(clientId: string): Promise<{
+  success: boolean;
+  data?: Invoice[];
+  error?: string;
+}> {
+  const supabase = createClient();
+
+  try {
+    // Get all invoices for a specific client
+    const { data: invoices, error: invoicesError } = await supabase
+      .from("invoices")
+      .select(
+        `
+          *,
+          client:client_id (
+            company_name, company_email, phone, contact_person, address
+          )
+        `
+      )
+      .eq("client_id", clientId)
+      .order("invoice_date", { ascending: false });
+
+    if (invoicesError) {
+      return {
+        success: false,
+        error: `Error fetching invoices: ${invoicesError.message}`,
+      };
+    }
+
+    return {
+      success: true,
+      data: invoices,
+    };
+  } catch (error) {
+    console.error("Error in getInvoicesByClientId:", error);
     return {
       success: false,
       error: `Unexpected error: ${(error as Error).message}`,
