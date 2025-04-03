@@ -13,11 +13,15 @@ export const getQuotations = async () => {
   const supabase = await createClient();
 
   try {
-    const { data: quotations, error } = await supabase.from("quotations")
-      .select(`
+    const { data: quotations, error } = await supabase
+      .from("quotations")
+      .select(
+        `
           *,
           client:client_id (company_name)
-        `);
+        `
+      )
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
 
@@ -77,13 +81,42 @@ export const deleteQuotation = async (id: string) => {
 
 export const getQuotationItems = async (
   id: string
-): Promise<QuotationItem[]> => {
+): Promise<{ quotation: any; items: QuotationItem[] }> => {
   const supabase = await createClient();
-  const { data, error } = await supabase
+
+  // Fetch the quotation with client information
+  const { data: quotation, error: quotationError } = await supabase
+    .from("quotations")
+    .select(
+      `
+      *,
+      client:client_id (
+        id,
+        company_name,
+        company_email,
+        contact_person,
+        phone,
+        address
+      )
+    `
+    )
+    .eq("id", id)
+    .single();
+
+  if (quotationError) {
+    throw new Error(`Failed to fetch quotation: ${quotationError.message}`);
+  }
+
+  // Fetch the quotation items
+  const { data: items, error: itemsError } = await supabase
     .from("quotation_items")
     .select()
     .eq("quotation_id", id);
 
-  if (error) throw new Error("Failed to fetch quotation items");
-  return data as QuotationItem[];
+  if (itemsError) throw new Error("Failed to fetch quotation items");
+
+  return {
+    quotation,
+    items: items as QuotationItem[],
+  };
 };

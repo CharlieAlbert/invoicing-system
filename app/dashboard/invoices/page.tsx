@@ -215,6 +215,7 @@ export default function InvoicesPage() {
     invoice_date: new Date(),
     due_date: new Date(new Date().setDate(new Date().getDate() + 30)), // Default 30 days
     discount: 0,
+    discount_type: "total", // "total" or "per_item"
     vat: 16, // Default VAT rate
     notes: "",
   });
@@ -907,6 +908,7 @@ export default function InvoicesPage() {
         due_date: formData.due_date.toISOString(),
         status: "pending" as const,
         discount: formData.discount,
+        discount_type: formData.discount_type,
         vat: formData.vat,
         notes: formData.notes || null,
         total_amount: invoiceItems.reduce(
@@ -982,6 +984,7 @@ export default function InvoicesPage() {
       invoice_date: new Date(),
       due_date: new Date(new Date().setDate(new Date().getDate() + 30)),
       discount: 0,
+      discount_type: "total",
       vat: 16,
       notes: "",
     });
@@ -1119,7 +1122,21 @@ export default function InvoicesPage() {
       (sum, item) => sum + item.total_amount,
       0
     );
-    const discountAmount = Number(formData.discount);
+
+    let discountAmount = 0;
+    if (formData.discount_type === "total") {
+      // Apply discount against total
+      discountAmount = Number(formData.discount);
+    } else {
+      // Apply discount per item
+      discountAmount = invoiceItems.reduce((sum, item) => {
+        return (
+          sum +
+          Number(formData.discount) * item.quantity
+        );
+      }, 0);
+    }
+
     const vatAmount = (subtotal * Number(formData.vat)) / 100;
     return subtotal - discountAmount + vatAmount;
   };
@@ -1481,8 +1498,9 @@ export default function InvoicesPage() {
                           htmlFor="discount"
                           className="flex items-center gap-1"
                         >
-                          <Percent className="h-4 w-4" />
-                          Discount (KES)
+                          {formData.discount_type === "total"
+                            ? "Discount (KES)"
+                            : "Discount (%)"}
                         </Label>
                         <Input
                           id="discount"
@@ -1496,10 +1514,37 @@ export default function InvoicesPage() {
                       </div>
                       <div className="space-y-2">
                         <Label
+                          htmlFor="discount_type"
+                          className="flex items-center gap-1"
+                        >
+                          Discount Type
+                        </Label>
+                        <Select
+                          value={formData.discount_type}
+                          onValueChange={(value) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              discount_type: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select discount type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="total">Against Total</SelectItem>
+                            <SelectItem value="per_item">Per Item</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label
                           htmlFor="vat"
                           className="flex items-center gap-1"
                         >
-                          <Percent className="h-4 w-4" />
                           VAT (%)
                         </Label>
                         <Input
@@ -1718,9 +1763,7 @@ export default function InvoicesPage() {
               {invoicesLoading ? (
                 <div className="text-center py-10">
                   <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-                  <p className="text-muted-foreground">
-                    Loading invoices...
-                  </p>
+                  <p className="text-muted-foreground">Loading invoices...</p>
                 </div>
               ) : filteredInvoices.length === 0 ? (
                 <div className="text-center py-10 border rounded-md bg-muted/20 border-dashed">
@@ -2100,7 +2143,7 @@ export default function InvoicesPage() {
                     {selectedInvoice.items?.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">
-                          {item.description}
+                          {item.product?.name}
                           {item.product_variant && (
                             <div className="text-xs text-muted-foreground">
                               {item.product_variant.size}{" "}

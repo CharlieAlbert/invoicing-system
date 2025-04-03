@@ -38,6 +38,7 @@ import {
   getQuotationById,
   getQuotations,
   getQuotationItems,
+  deleteQuotation,
 } from "@/lib/supabase/server-extended/quotations";
 import { getClients } from "@/lib/supabase/server-extended/clients";
 import { getProducts } from "@/lib/supabase/server-extended/products";
@@ -57,13 +58,19 @@ import {
   ShoppingCart,
   CheckCircle2,
   XCircle,
-  Clock3,
   Download,
   Loader2,
   Search,
   RefreshCw,
   AlertCircle,
   Eye,
+  Receipt,
+  ClipboardList,
+  ArrowUpDown,
+  MoreHorizontal,
+  Pencil,
+  FileCheck,
+  Clock3,
 } from "lucide-react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
@@ -75,6 +82,31 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { generatePDF } from "@/utils/pdf/generatePDF";
 import html2pdf from "html2pdf.js";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function QuotationsPage() {
   // Types
@@ -86,6 +118,7 @@ export default function QuotationsPage() {
     quantity: number;
     quotation_id: string | null;
     total_amount: number | null;
+    description?: string | null;
   };
 
   type Client = {
@@ -130,26 +163,34 @@ export default function QuotationsPage() {
     client?: {
       company_name: string;
     } | null;
+    items?: QuotationItem[];
   };
 
   // State
   const [quotationItems, setQuotationItems] = useState<QuotationItem[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [selectedVariantId, setSelectedVariantId] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<string>("create");
-  const [loading, setLoading] = useState(false);
-  const [quotationsLoading, setQuotationsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [quotationsLoading, setQuotationsLoading] = useState<boolean>(false);
+  const [loadingDetails, setLoadingDetails] = useState<boolean>(false);
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [activeTab, setActiveTab] = useState<string>("list");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(
+    null
+  );
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState<boolean>(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     product: "",
     quantity: "",
     price: "",
     discount: "0",
+    discount_type: "total", // "total" or "per_item"
     vat: "16", // Default VAT in Kenya
     valid_until: new Date(new Date().setDate(new Date().getDate() + 30)), // Default 30 days validity
   });
@@ -291,23 +332,16 @@ export default function QuotationsPage() {
     try {
       setLoading(true);
 
-      const totalAmount = quotationItems.reduce(
-        (sum, item) =>
-          sum + Number(item.quantity) * Number(item.price_per_unit),
-        0
-      );
-
-      const discount = Number(formData.discount);
-      const vat = Number(formData.vat);
-      const finalAmount = totalAmount - discount + (totalAmount * vat) / 100;
+      const { subtotal, discountAmount, vatAmount, finalTotal } =
+        calculateFinalAmount();
 
       const quotation = await createQuotation({
         client_id: selectedClientId,
         created_by: user?.id || "",
-        total_amount: totalAmount,
-        discount,
-        vat,
-        final_amount: finalAmount,
+        total_amount: subtotal,
+        discount: discountAmount,
+        vat: Number(formData.vat),
+        final_amount: finalTotal,
         valid_until: formData.valid_until.toISOString(),
         status: "pending",
       });
@@ -331,6 +365,7 @@ export default function QuotationsPage() {
         quantity: "",
         price: "",
         discount: "0",
+        discount_type: "total",
         vat: "16",
         valid_until: new Date(new Date().setDate(new Date().getDate() + 30)),
       });
@@ -369,9 +404,7 @@ export default function QuotationsPage() {
       }
 
       // Fetch quotation items using the provided function
-      const quotationItems: QuotationItem[] = await getQuotationItems(
-        quotationId
-      );
+      const { items: quotationItems } = await getQuotationItems(quotationId);
 
       // Map items to the format needed for the PDF
       const items = quotationItems.map((item) => {
@@ -803,7 +836,9 @@ export default function QuotationsPage() {
         <div class="signature-line">
           <span class="signature-label">Authorized Signature</span>
         </div>
-        <p style="margin-top: 10px; font-size: 14px;">For ${companyInfo.name}</p>
+        <p style="margin-top: 10px; font-size: 14px;">For ${
+          companyInfo.name
+        }</p>
       </div>
       
       <div class="signature-box">
@@ -824,7 +859,7 @@ export default function QuotationsPage() {
     </div>
   </div>
 </body>
-</html>`
+</html>`;
 
       // Request PDF generation with the HTML
       const response = await fetch("/api/generate-pdf", {
@@ -855,21 +890,87 @@ export default function QuotationsPage() {
     }
   };
 
+  // Fetch quotation details for viewing
+  const fetchQuotationDetails = async (quotationId: string) => {
+    try {
+      setLoadingDetails(true);
+
+      // Fetch quotation with items and client info using the enhanced API
+      const { quotation, items } = await getQuotationItems(quotationId);
+
+      if (!quotation) {
+        toast.error("Quotation not found");
+        return;
+      }
+
+      // Set the quotation with its items
+      setSelectedQuotation({
+        ...quotation,
+        items: items,
+      });
+
+      toast.success("Quotation details loaded");
+    } catch (error) {
+      console.error("Error fetching quotation details:", error);
+      toast.error("Failed to load quotation details");
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  // Calculate final amount
+  const calculateFinalAmount = () => {
+    const subtotal = quotationItems.reduce(
+      (sum, item) => sum + (item.total_amount || 0),
+      0
+    );
+
+    let discountAmount = 0;
+    if (formData.discount_type === "total") {
+      // Apply discount against total
+      discountAmount = Number(formData.discount);
+    } else {
+      // Apply discount per item (percentage)
+      discountAmount = quotationItems.reduce((sum, item) => {
+        // For each item, apply the discount amount multiplied by the quantity
+        return sum + Number(formData.discount) * item.quantity;
+      }, 0);
+    }
+
+    const vatAmount = (subtotal * Number(formData.vat)) / 100;
+    return {
+      subtotal,
+      discountAmount,
+      vatAmount,
+      finalTotal: subtotal - discountAmount + vatAmount,
+    };
+  };
+
+  // Handle delete quotation
+  const handleDeleteQuotation = async (quotationId: string) => {
+    try {
+      setLoading(true);
+
+      const response = await deleteQuotation(quotationId);
+
+      if (response.success) {
+        setQuotations((prev) => prev.filter((q) => q.id !== quotationId));
+        toast.success(response.message || "Quotation deleted successfully");
+      } else {
+        toast.error(response.message || "Failed to delete quotation.");
+      }
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      console.error("Error deleting quotation:", error);
+      toast.error("Failed to delete quotation");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Calculate subtotal
-  const subtotal = quotationItems.reduce(
-    (sum, item) =>
-      sum + Number(item.quantity) * Number(item.price_per_unit || 0),
-    0
-  );
-
-  // Calculate discount amount
-  const discountAmount = Number(formData.discount);
-
-  // Calculate VAT amount
-  const vatAmount = (subtotal * Number(formData.vat)) / 100;
-
-  // Calculate final total
-  const finalTotal = subtotal - discountAmount + vatAmount;
+  const { subtotal, discountAmount, vatAmount, finalTotal } =
+    calculateFinalAmount();
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -1144,7 +1245,9 @@ export default function QuotationsPage() {
                           className="flex items-center gap-1"
                         >
                           <Percent className="h-4 w-4" />
-                          Discount (KES)
+                          {formData.discount_type === "total"
+                            ? "Discount (KES)"
+                            : "Discount (%)"}
                         </Label>
                         <Input
                           id="discount"
@@ -1156,6 +1259,35 @@ export default function QuotationsPage() {
                           step="0.01"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="discount_type"
+                          className="flex items-center gap-1"
+                        >
+                          <Percent className="h-4 w-4" />
+                          Discount Type
+                        </Label>
+                        <Select
+                          value={formData.discount_type}
+                          onValueChange={(value) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              discount_type: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select discount type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="total">Against Total</SelectItem>
+                            <SelectItem value="per_item">Per Item</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label
                           htmlFor="vat"
@@ -1476,27 +1608,47 @@ export default function QuotationsPage() {
                               {getStatusBadge(quotation.status)}
                             </TableCell>
                             <TableCell className="text-right">
-                              <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() =>
-                                    handleGeneratePDF(quotation.id)
-                                  }
-                                >
-                                  <Download className="h-4 w-4" />
-                                  <span className="sr-only">Download</span>
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                  <span className="sr-only">View</span>
-                                </Button>
-                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      fetchQuotationDetails(quotation.id);
+                                      setIsViewDialogOpen(true);
+                                    }}
+                                  >
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    View Details
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleGeneratePDF(quotation.id)
+                                    }
+                                  >
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Download PDF
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive"
+                                    onClick={() => {
+                                      setSelectedQuotation(quotation);
+                                      setIsDeleteDialogOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -1509,6 +1661,204 @@ export default function QuotationsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* View Quotation Details Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Quotation Details</DialogTitle>
+          </DialogHeader>
+
+          {loadingDetails ? (
+            <div className="text-center py-10">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+              <p className="text-muted-foreground">
+                Loading quotation details...
+              </p>
+            </div>
+          ) : selectedQuotation ? (
+            <div className="space-y-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    Quotation #{selectedQuotation.id.substring(0, 8)}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Created on {formatDate(selectedQuotation.created_at)}
+                  </p>
+                </div>
+                <Badge variant="outline" className="ml-2">
+                  {getStatusBadge(selectedQuotation.status)}
+                </Badge>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-sm font-medium mb-2">
+                    Client Information
+                  </h4>
+                  <div className="bg-muted/30 p-3 rounded-md">
+                    <p className="font-medium">
+                      {selectedQuotation.client?.company_name}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-medium mb-2">
+                    Quotation Details
+                  </h4>
+                  <div className="bg-muted/30 p-3 rounded-md space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Date:</span>
+                      <span>{formatDate(selectedQuotation.created_at)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        Valid Until:
+                      </span>
+                      <span>{formatDate(selectedQuotation.valid_until)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Status:</span>
+                      <span>{selectedQuotation.status}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium mb-2">Items</h4>
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="text-right">Qty</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedQuotation?.items?.map((item) => {
+                      // Find the product name from the product_id
+                      const product = products.find(
+                        (p) => p.id === item.product_id
+                      );
+                      const productName = product
+                        ? product.name
+                        : "Custom Item";
+
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">
+                            {productName}
+                          </TableCell>
+                          <TableCell>{item.description || "-"}</TableCell>
+                          <TableCell className="text-right">
+                            {item.quantity}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(item.price_per_unit || 0)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(item.total_amount || 0)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="flex justify-end">
+                <div className="w-64 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal:</span>
+                    <span>
+                      {formatCurrency(selectedQuotation.total_amount || 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Discount:</span>
+                    <span>
+                      - {formatCurrency(selectedQuotation.discount || 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">VAT:</span>
+                    <span>+ {formatCurrency(selectedQuotation.vat || 0)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between font-medium">
+                    <span>Total:</span>
+                    <span>
+                      {formatCurrency(selectedQuotation.final_amount || 0)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <AlertCircle className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-muted-foreground">Quotation not found</p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsViewDialogOpen(false)}
+            >
+              Close
+            </Button>
+            <Button
+              onClick={() =>
+                selectedQuotation && handleGeneratePDF(selectedQuotation.id)
+              }
+              disabled={!selectedQuotation}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Quotation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this quotation? This action cannot
+              be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                selectedQuotation && handleDeleteQuotation(selectedQuotation.id)
+              }
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
