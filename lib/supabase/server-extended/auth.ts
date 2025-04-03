@@ -69,10 +69,17 @@ export async function ValidateOtp({ email, otp, password }: validateOtp) {
 
   if (data.user && data.user.identities?.length) {
     const userData = data.user.user_metadata;
+    const userPassword = userData.password;
+    
+    console.log("User verified with OTP, creating password-based account");
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    // First, sign out the current OTP session
+    await supabase.auth.signOut();
+    
+    // Then create a proper password-based account
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
-      password: userData.password,
+      password: userPassword,
       options: {
         data: {
           name: userData.name,
@@ -86,13 +93,18 @@ export async function ValidateOtp({ email, otp, password }: validateOtp) {
       throw new Error("Failed to create account. Please try again.");
     }
 
-    const { data: sessionData, error: sessionError } =
-      await supabase.auth.getSession();
+    // Sign in with the newly created password-based account to get a valid session
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password: userPassword,
+    });
 
-    if (sessionError || !sessionData.session) {
-      console.error("Session refresh error:", sessionError?.message);
-      throw new Error("Authentication failed after sign-up. Please log in.");
+    if (signInError) {
+      console.error("Auto sign-in error after account creation:", signInError);
+      throw new Error("Account created but couldn't sign in automatically. Please log in manually.");
     }
+
+    const sessionData = signInData;
 
     // Check if an account already exists for this email
     const { data: existingAccount } = await supabase
@@ -106,7 +118,7 @@ export async function ValidateOtp({ email, otp, password }: validateOtp) {
       return { data: sessionData }; // Avoid duplicate entries
     }
 
-    console.log("Auth ID before insert:", data.user.id); // Debugging
+    console.log("Creating account record with auth ID:", signInData.user.id);
 
     const { error: accountError } = await supabase.from("account").insert([
       {
@@ -114,7 +126,7 @@ export async function ValidateOtp({ email, otp, password }: validateOtp) {
         name: userData.name,
         phone: userData.phone,
         role: "staff",
-        auth_id: data.user.id,
+        auth_id: signInData.user.id,
       },
     ]);
 
@@ -141,32 +153,47 @@ export async function Login({ email, password }: LoginCredentials) {
     throw new Error("Email and password are required");
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  console.log(`Attempting login for email: ${email}`);
 
-  if (error) {
-    console.error("Login error:", error);
-    throw new Error("Login failed. Please try again.");
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.error("Login error details:", {
+        message: error.message,
+        status: error.status,
+        name: error.name
+      });
+      throw new Error(`Login failed: ${error.message}`);
+    }
+
+    if (!data.user || !data.session) {
+      console.error("Login failed: No user or session returned");
+      throw new Error("Login failed. Please try again.");
+    }
+
+    console.log("Login successful, fetching account data");
+
+    const { data: AccountData, error: AccountError } = await supabase
+      .from("account")
+      .select("*")
+      .eq("auth_id", data.user.id)
+      .single();
+
+    if (AccountError) {
+      console.error("Error fetching account:", AccountError);
+      throw new Error("Failed to fetch account. Please try again later.");
+    }
+
+    console.log("Account data retrieved successfully");
+    return { user: data.user, session: data.session, account: AccountData };
+  } catch (err) {
+    console.error("Unexpected login error:", err);
+    throw err;
   }
-
-  if (!data.user || !data.session) {
-    throw new Error("Login failed. Please try again.");
-  }
-
-  const { data: AccountData, error: AccountError } = await supabase
-    .from("account")
-    .select("*")
-    .eq("auth_id", data.user.id)
-    .single();
-
-  if (AccountError) {
-    console.error("Error fetching account:", AccountError);
-    throw new Error("Failed to fetch account. Please try again later.");
-  }
-
-  return { user: data.user, session: data.session, account: AccountData };
 }
 
 export const getSelfProfile = async (): Promise<{
@@ -204,4 +231,31 @@ export const getSelfProfile = async (): Promise<{
 export async function Logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+}
+
+export async function ResetPassword(email: string) {
+  const supabase = await createClient();
+  
+  if (!email) {
+    throw new Error("Email is required");
+  }
+  
+  console.log(`Sending password reset email to: ${email}`);
+  
+  // Get the base URL from environment or use a default
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const redirectUrl = `${baseUrl}/auth/update-password`;
+  
+  console.log(`Using redirect URL: ${redirectUrl}`);
+  
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: redirectUrl,
+  });
+  
+  if (error) {
+    console.error("Password reset error:", error);
+    throw new Error(`Failed to send password reset email: ${error.message}`);
+  }
+  
+  return { success: true, message: "Password reset instructions sent to your email" };
 }

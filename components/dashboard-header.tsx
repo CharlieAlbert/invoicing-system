@@ -11,6 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Logout } from "@/lib/supabase/server-extended/auth";
+import { useRouter } from "next/navigation";
 
 interface UserProps {
   name: string;
@@ -20,6 +22,7 @@ interface UserProps {
 
 export function DashboardHeader({ user }: { user?: UserProps }) {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   const initials = user?.name
     ? user.name
@@ -32,6 +35,8 @@ export function DashboardHeader({ user }: { user?: UserProps }) {
   const handleLogout = () => {
     // Implement logout functionality here
     console.log("Logging out...");
+    Logout();
+    router.push("/");
   };
 
   return (

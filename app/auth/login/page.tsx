@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Login } from "@/lib/supabase/server-extended/auth";
+import { Login, ResetPassword } from "@/lib/supabase/server-extended/auth";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function LoginPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   if (user) {
     router.push("/dashboard");
@@ -50,12 +52,33 @@ export default function LoginPage() {
       // Store user session or token in localStorage if needed
       localStorage.setItem("token", session.access_token);
 
+      toast.success("Login successful!");
+      
       // Redirect to dashboard
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid credentials");
+      toast.error(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!formData.email) {
+      setError("Please enter your email address to reset your password");
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      await ResetPassword(formData.email);
+      toast.success("Password reset instructions sent to your email");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send reset email");
+      toast.error(err instanceof Error ? err.message : "Failed to send reset email");
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -87,12 +110,15 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-primary underline-offset-4 hover:underline"
+                <Button
+                  variant="link"
+                  className="p-0 text-sm text-primary"
+                  type="button"
+                  onClick={handleResetPassword}
+                  disabled={resetLoading}
                 >
-                  Forgot password?
-                </Link>
+                  {resetLoading ? "Sending..." : "Forgot password?"}
+                </Button>
               </div>
               <Input
                 id="password"
@@ -110,7 +136,7 @@ export default function LoginPage() {
             <div className="text-center text-sm">
               Don&apos;t have an account?{" "}
               <Link
-                href="/signup"
+                href="/auth/signup"
                 className="text-primary underline-offset-4 hover:underline"
               >
                 Sign up
