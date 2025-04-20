@@ -39,6 +39,7 @@ export async function SignUpRequest({ email, password, name, phone }: SignUp) {
 
     throw new Error("Unable to send verification code. Please try again.");
   }
+  
 
   return { success: true, message: "Verification code sent to your email" };
 }
