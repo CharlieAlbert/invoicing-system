@@ -120,3 +120,19 @@ export const getQuotationItems = async (
     items: items as QuotationItem[],
   };
 };
+
+export const updateQuotationStatus = async (
+  id: string,
+  status: "approved" | "rejected"
+) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("quotations")
+    .update({ status })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw new Error(`Failed to update quotation status: ${error.message}`);
+  return { success: true, data };
+};

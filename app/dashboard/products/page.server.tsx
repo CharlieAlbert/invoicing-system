@@ -9,21 +9,22 @@ export const revalidate = 60;
 
 export default async function ProductsPage() {
   // Fetch data on the server
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
   // Prefetch data for the page
   const productsData = await getProducts();
 
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center w-full h-24">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      }
-    >
-      <ProductsClient initialProducts={productsData} user={data.user} />
+    <Suspense fallback={
+      <div className="flex items-center justify-center w-full h-24">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <ProductsClient 
+        initialProducts={productsData}
+        user={user}
+      />
     </Suspense>
   );
 }
