@@ -1017,7 +1017,6 @@ export default function QuotationsClient({
                                 valid_until: date || new Date(),
                               }))
                             }
-                            initialFocus
                             disabled={(date) => date < new Date()}
                           />
                         </PopoverContent>
