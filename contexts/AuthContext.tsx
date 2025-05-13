@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { Database } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { getSelfProfile } from "@/lib/supabase/server-extended/auth";
@@ -74,16 +80,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     router.prefetch("/auth/login");
     router.prefetch("/auth/signup");
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event) => {
-      console.log("Auth state changed:", event);
-      if (event === "SIGNED_IN") {
-        await fetchUser();
-        router.refresh();
-      } else if (event === "SIGNED_OUT") {
-        setUser(null);
-        router.refresh();
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event) => {
+        console.log("Auth state changed:", event);
+        if (event === "SIGNED_IN") {
+          await fetchUser();
+          router.refresh();
+        } else if (event === "SIGNED_OUT") {
+          setUser(null);
+          router.refresh();
+        }
       }
-    });
+    );
 
     return () => {
       authListener?.subscription.unsubscribe();
@@ -92,12 +100,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ 
-        user, 
-        loading, 
-        error, 
+      value={{
+        user,
+        loading,
+        error,
         revalidate: fetchUser,
-        logout
+        logout,
       }}
     >
       {children}

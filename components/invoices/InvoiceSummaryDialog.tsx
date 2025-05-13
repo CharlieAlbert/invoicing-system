@@ -23,8 +23,11 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { getClients } from "@/lib/supabase/server-extended/clients";
-import { getInvoicesByClientId, InvoiceWithItems } from "@/lib/supabase/server-extended/invoices";
-import { generateInvoiceSummaryHTML } from "@/utils/pdf/generateInvoiceSummary";
+import {
+  getInvoicesByClientId,
+  InvoiceWithItems,
+} from "@/lib/supabase/server-extended/invoices";
+import { InvoicePDFDownload } from "@/components/pdf/InvoicePDF";
 import { Loader2, FileText } from "lucide-react";
 import { Database } from "@/lib/supabase/types";
 
@@ -140,7 +143,6 @@ export function InvoiceSummaryDialog({
 
     try {
       setGeneratingPdf(true);
-      toast.loading("Generating invoice summary...");
 
       // Get client info
       const client = clients.find((c) => c.id === selectedClientId);
@@ -154,52 +156,11 @@ export function InvoiceSummaryDialog({
         selectedInvoices.includes(invoice.id)
       );
 
-      // Generate HTML for the summary
-      const html = generateInvoiceSummaryHTML(
-        selectedInvoiceData as unknown as InvoiceWithItems[],
-        client,
-        summaryTitle
-      );
-
-      // Generate PDF using the server API
-      const response = await fetch("/api/generate-pdf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          html,
-          filename: `${client.company_name.replace(/\s+/g, "-")}-Invoice-Summary-${format(
-            new Date(),
-            "yyyy-MM-dd"
-          )}.pdf`,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate PDF");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${client.company_name.replace(/\s+/g, "-")}-Invoice-Summary-${format(
-        new Date(),
-        "yyyy-MM-dd"
-      )}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast.dismiss();
-      toast.success("Invoice summary generated successfully");
+      // Close the dialog after starting the download
       onOpenChange(false);
+      toast.success("Invoice summary generated successfully");
     } catch (error) {
       console.error("Error generating invoice summary:", error);
-      toast.dismiss();
       toast.error("Failed to generate invoice summary");
     } finally {
       setGeneratingPdf(false);
@@ -208,44 +169,31 @@ export function InvoiceSummaryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>Generate Invoice Summary</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="summary-title" className="text-right">
-              Title
-            </Label>
-            <Input
-              id="summary-title"
-              value={summaryTitle}
-              onChange={(e) => setSummaryTitle(e.target.value)}
-              className="col-span-3"
-              placeholder="Payment Summary"
-            />
-          </div>
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Summary Title</Label>
+              <Input
+                id="title"
+                value={summaryTitle}
+                onChange={(e) => setSummaryTitle(e.target.value)}
+                placeholder="Enter summary title"
+              />
+            </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="client" className="text-right">
-              Client
-            </Label>
-            <div className="col-span-3">
+            <div className="space-y-2">
+              <Label htmlFor="client">Select Client</Label>
               <Select
                 value={selectedClientId}
                 onValueChange={handleClientChange}
-                disabled={loadingClients}
               >
-                <SelectTrigger id="client">
-                  {loadingClients ? (
-                    <div className="flex items-center">
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Loading clients...
-                    </div>
-                  ) : (
-                    <SelectValue placeholder="Select a client" />
-                  )}
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a client" />
                 </SelectTrigger>
                 <SelectContent>
                   {clients.map((client) => (
@@ -258,36 +206,26 @@ export function InvoiceSummaryDialog({
             </div>
           </div>
 
-          {selectedClientId && (
-            <div className="mt-4">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-lg font-medium">Invoices</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSelectAll}
-                  disabled={invoices.length === 0 || loadingInvoices}
-                >
-                  {selectedInvoices.length === invoices.length && invoices.length > 0
-                    ? "Deselect All"
-                    : "Select All"}
-                </Button>
-              </div>
+          {loadingInvoices ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <div>
+              {invoices.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={selectedInvoices.length === invoices.length}
+                      onCheckedChange={handleSelectAll}
+                    />
+                    <Label>Select All</Label>
+                  </div>
 
-              {loadingInvoices ? (
-                <div className="flex justify-center items-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : invoices.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No invoices found for this client
-                </div>
-              ) : (
-                <div className="border rounded-md overflow-hidden">
                   <table className="w-full">
-                    <thead className="bg-muted">
+                    <thead>
                       <tr>
-                        <th className="p-2 text-left w-8"></th>
+                        <th className="p-2 text-center">Select</th>
                         <th className="p-2 text-left">Invoice #</th>
                         <th className="p-2 text-left">Date</th>
                         <th className="p-2 text-right">Amount</th>
@@ -297,7 +235,9 @@ export function InvoiceSummaryDialog({
                     </thead>
                     <tbody>
                       {invoices.map((invoice) => {
-                        const isSelected = selectedInvoices.includes(invoice.id);
+                        const isSelected = selectedInvoices.includes(
+                          invoice.id
+                        );
                         const amountPaid = invoice.amount_paid || 0;
                         const totalAmount = invoice.total_amount || 0;
                         const remaining = totalAmount - amountPaid;
@@ -321,12 +261,17 @@ export function InvoiceSummaryDialog({
                             <td className="p-2 text-center">
                               <Checkbox
                                 checked={isSelected}
-                                onCheckedChange={() => handleInvoiceToggle(invoice.id)}
+                                onCheckedChange={() =>
+                                  handleInvoiceToggle(invoice.id)
+                                }
                               />
                             </td>
                             <td className="p-2">{invoice.invoice_number}</td>
                             <td className="p-2">
-                              {format(new Date(invoice.invoice_date), "dd/MM/yyyy")}
+                              {format(
+                                new Date(invoice.invoice_date),
+                                "dd/MM/yyyy"
+                              )}
                             </td>
                             <td className="p-2 text-right">
                               {totalAmount.toLocaleString("en-KE", {
@@ -358,7 +303,7 @@ export function InvoiceSummaryDialog({
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex items-center justify-between">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -366,23 +311,15 @@ export function InvoiceSummaryDialog({
           >
             Cancel
           </Button>
-          <Button
-            onClick={handleGenerateSummary}
-            disabled={
-              selectedInvoices.length === 0 ||
-              !selectedClientId ||
-              generatingPdf
-            }
-          >
-            {generatingPdf ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              "Generate Summary"
-            )}
-          </Button>
+          {selectedClientId && selectedInvoices.length > 0 && (
+            <InvoicePDFDownload
+              data={invoices.filter((invoice) =>
+                selectedInvoices.includes(invoice.id)
+              )}
+              clientInfo={clients.find((c) => c.id === selectedClientId)!}
+              title={summaryTitle}
+            />
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

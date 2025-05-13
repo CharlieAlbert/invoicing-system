@@ -7,7 +7,7 @@ export const revalidate = 60;
 
 export default async function SignupPage() {
   // Check authentication on the server
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
   // If user is authenticated, redirect to dashboard

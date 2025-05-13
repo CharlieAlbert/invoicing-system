@@ -18,16 +18,14 @@ export const getQuotations = async () => {
       .select(
         `
           *,
-          client:client_id (company_name)
+          client:client_id (company_name, company_email, contact_person, address)
         `
       )
       .order("created_at", { ascending: false });
 
     if (error) throw error;
 
-    return quotations as (Quotation & {
-      client: { company_name: string } | null;
-    })[];
+    return quotations;
   } catch (error) {
     console.error("Error fetching quotations:", error);
     throw new Error("Failed to fetch quotations");
@@ -46,12 +44,44 @@ export const getQuotationById = async (id: string) => {
   return data as Quotation & { quotation_items: QuotationItem[] };
 };
 
-// Create a new quotation
 export const createQuotation = async (quotationData: InsertQuotation) => {
   const supabase = await createClient();
+
+  if (!quotationData.client_id) throw new Error("Client ID is required");
+  if (!quotationData.created_by) throw new Error("Created by is required");
+  if (
+    quotationData.total_amount === null ||
+    quotationData.total_amount === undefined
+  ) {
+    throw new Error("Total amount is required");
+  }
+  if (!quotationData.discount) throw new Error("Discount is required");
+  if (!quotationData.vat) throw new Error("VAT is required");
+  if (!quotationData.final_amount) throw new Error("Final amount is required");
+  if (!quotationData.valid_until) throw new Error("Valid until is required");
+  if (!quotationData.status) throw new Error("Status is required");
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("quotations")
+    .select("quotation_number")
+    .order("quotation_number", { ascending: false })
+    .limit(1)
+    .single();
+
+  let nextNumber = "001";
+  if (existing && existing.quotation_number) {
+    const current = parseInt(existing.quotation_number, 10);
+    nextNumber = String(current + 1).padStart(3, "0");
+  }
+
+  const quotationWithNumber = {
+    ...quotationData,
+    quotation_number: nextNumber,
+  };
+
   const { data, error } = await supabase
     .from("quotations")
-    .insert([quotationData])
+    .insert([quotationWithNumber])
     .select()
     .single();
 
@@ -70,7 +100,6 @@ export const addQuotationItems = async (items: InsertQuotationItem[]) => {
   return data as QuotationItem[];
 };
 
-// Delete a quotation
 export const deleteQuotation = async (id: string) => {
   const supabase = await createClient();
   const { error } = await supabase.from("quotations").delete().eq("id", id);
@@ -133,6 +162,7 @@ export const updateQuotationStatus = async (
     .select()
     .single();
 
-  if (error) throw new Error(`Failed to update quotation status: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to update quotation status: ${error.message}`);
   return { success: true, data };
 };

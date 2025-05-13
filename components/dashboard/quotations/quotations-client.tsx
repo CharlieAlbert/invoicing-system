@@ -135,8 +135,8 @@ interface Quotation {
   created_at: string;
   created_by: string;
   total_amount: number;
-  discount: number;
-  vat: number;
+  discount: number | null;
+  vat: number | null;
   final_amount: number;
   valid_until: string;
   status: "pending" | "approved" | "rejected";
@@ -146,7 +146,7 @@ interface Quotation {
     company_email: string;
     contact_person?: string | null;
     address?: string | null;
-  };
+  } | null;
   items?: QuotationItem[];
 }
 
@@ -605,6 +605,7 @@ export default function QuotationsClient({
         valid_until: formData.valid_until.toISOString(),
         status: "pending" as const,
         notes: formData.notes || null,
+        quotation_number: "",
       };
 
       // Create quotation
@@ -1583,11 +1584,13 @@ export default function QuotationsClient({
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Discount:</span>
-                    <span>- {formatCurrency(selectedQuotation.discount)}</span>
+                    <span>
+                      - {formatCurrency(selectedQuotation.discount || 0)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">VAT:</span>
-                    <span>+ {formatCurrency(selectedQuotation.vat)}</span>
+                    <span>+ {formatCurrency(selectedQuotation.vat || 0)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-medium">
