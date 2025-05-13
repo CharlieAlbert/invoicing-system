@@ -860,7 +860,6 @@ export default function InvoicesClient({
                                   invoice_date: date || new Date(),
                                 }))
                               }
-                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>
@@ -893,7 +892,6 @@ export default function InvoicesClient({
                                   due_date: date || new Date(),
                                 }))
                               }
-                              initialFocus
                               disabled={(date) => date < formData.invoice_date}
                             />
                           </PopoverContent>
