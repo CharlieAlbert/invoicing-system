@@ -11,7 +11,6 @@ import { Database } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { getSelfProfile } from "@/lib/supabase/server-extended/auth";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 type AccountData = Database["public"]["Tables"]["account"]["Row"];
 
@@ -20,7 +19,6 @@ type AuthContextType = {
   loading: boolean;
   error: string | null;
   revalidate: () => Promise<void>;
-  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -28,7 +26,6 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   error: null,
   revalidate: async () => {},
-  logout: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -38,7 +35,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const supabase = createClient();
   const router = useRouter();
 
-  const fetchUser = useCallback(async () => {
+  const fetchUser = async () => {
     setLoading(true);
     try {
       const { data, error } = await getSelfProfile();
@@ -56,21 +53,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const logout = useCallback(async () => {
-    try {
-      await supabase.auth.signOut();
-      setUser(null);
-      localStorage.removeItem("token");
-      toast.success("Logged out successfully");
-      router.push("/");
-      router.refresh();
-    } catch (err) {
-      toast.error("Failed to log out");
-      console.error("Logout error:", err);
-    }
-  }, [supabase.auth, router]);
+  };
 
   useEffect(() => {
     fetchUser();
@@ -96,7 +79,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       authListener?.subscription.unsubscribe();
     };
-  }, [fetchUser, router, supabase.auth]);
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -105,7 +88,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         loading,
         error,
         revalidate: fetchUser,
-        logout,
       }}
     >
       {children}

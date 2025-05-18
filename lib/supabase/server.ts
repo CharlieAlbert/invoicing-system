@@ -19,13 +19,15 @@ export const createClient = async () => {
           } catch (error) {
             // Handle cookie setting errors silently
           }
+
         },
-        async remove(name: string, options: CookieOptions) {
+        async remove(name, options) {
           try {
             cookieStore.set({ name, value: "", ...options });
           } catch (error) {
             // Handle cookie removal errors silently
           }
+
         },
       },
     }

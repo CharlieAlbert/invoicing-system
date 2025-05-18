@@ -30,7 +30,7 @@ export async function createInvoice(
   invoiceData: Omit<InvoiceInsert, "id" | "created_at" | "invoice_number">,
   invoiceItems: Omit<InvoiceItemInsert, "id" | "created_at" | "invoice_id">[]
 ): Promise<{ success: boolean; error?: string; invoice_id?: string }> {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   // Start a transaction
   const { data: client } = await supabase.auth.getUser();
@@ -103,7 +103,7 @@ export async function getInvoiceWithItems(invoiceId: string): Promise<{
   data?: InvoiceWithItems;
   error?: string;
 }> {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   try {
     // 1. Get the invoice with client info
@@ -166,7 +166,7 @@ export async function getInvoiceWithItems(invoiceId: string): Promise<{
 export async function deleteInvoice(
   invoiceId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   try {
     const { error } = await supabase
@@ -195,7 +195,7 @@ export async function addInvoiceItem(
   invoiceId: string,
   itemData: Omit<InvoiceItemInsert, "id" | "created_at" | "invoice_id">
 ): Promise<{ success: boolean; error?: string; item_id?: string }> {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   try {
     // Insert the item
@@ -267,7 +267,7 @@ export async function updateInvoiceItem(
   itemId: string,
   updateData: Partial<Pick<InvoiceItemUpdate, "quantity" | "price_per_unit">>
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   try {
     // Get the current item to calculate new totals
@@ -360,7 +360,7 @@ export async function updateInvoiceItem(
 export async function deleteInvoiceItem(
   itemId: string
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   try {
     // Get the item before deleting it
@@ -446,7 +446,7 @@ export async function recordInvoicePayment(
     notes?: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   try {
     // Get the current invoice
@@ -508,7 +508,7 @@ export async function createInvoiceFromQuotation(
   quotationId: string,
   dueDate?: string
 ): Promise<{ success: boolean; error?: string; invoice_id?: string }> {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   try {
     // 1. Get the quotation details
@@ -622,7 +622,7 @@ export async function getInvoices(): Promise<{
   data?: Invoice[];
   error?: string;
 }> {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   try {
     // Get all invoices with client info
@@ -663,7 +663,7 @@ export async function getInvoicesByClientId(clientId: string): Promise<{
   data?: Invoice[];
   error?: string;
 }> {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   try {
     // Get all invoices for a specific client

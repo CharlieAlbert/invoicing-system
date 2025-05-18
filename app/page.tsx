@@ -1,16 +1,34 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
-import { HomeClient } from "@/components/home/home-client";
+"use client";
 
-export const revalidate = 60;
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
-export default async function Home() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getSession();
+export default function Home() {
+  const { user } = useAuth();
+  const router = useRouter();
 
-  if (data?.session) {
-    redirect("/dashboard");
+  if (user) {
+    router.push("/dashboard");
   }
 
-  return <HomeClient />;
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-8 text-center">
+        <h1 className="text-4xl font-bold tracking-tight">Welcome</h1>
+        <p className="text-lg text-muted-foreground">
+          Sign in to your account or create a new one
+        </p>
+        <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
+          <Button asChild className="flex-1">
+            <Link href="/auth/login">Login</Link>
+          </Button>
+          <Button asChild variant="outline" className="flex-1">
+            <Link href="/auth/signup">Sign Up</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
