@@ -2,19 +2,15 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { HomeClient } from "@/components/home/home-client";
 
-// Enable revalidation every 60 seconds
 export const revalidate = 60;
 
 export default async function Home() {
-  // Check authentication on the server
   const supabase = await createClient();
   const { data } = await supabase.auth.getSession();
 
-  // If user is authenticated, redirect to dashboard
   if (data?.session) {
     redirect("/dashboard");
   }
 
-  // If not authenticated, show the welcome page
   return <HomeClient />;
 }
