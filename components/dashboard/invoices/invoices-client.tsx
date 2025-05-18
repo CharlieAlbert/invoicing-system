@@ -1,15 +1,29 @@
-"use client"
+"use client";
 
-import type * as React from "react"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import type * as React from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +31,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +41,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,10 +49,20 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Plus,
   Trash2,
@@ -67,112 +91,112 @@ import {
   Percent,
   ShoppingCart,
   CalendarIcon,
-} from "lucide-react"
-import { useRouter } from "next/navigation"
+} from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   getInvoiceWithItems,
   deleteInvoice,
   getInvoices,
   createInvoice,
   addInvoiceItem,
-} from "@/lib/supabase/server-extended/invoices"
-import type { Database } from "@/lib/supabase/types"
-import { toast } from "sonner"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+} from "@/lib/supabase/server-extended/invoices";
+import type { Database } from "@/lib/supabase/types";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 // Define types for the component props
 interface InvoiceItem {
-  id: string | number
-  product_id: string
-  product_variant_id?: string | null
-  description: string
-  quantity: number
-  price_per_unit: number
-  total_amount: number
+  id: string | number;
+  product_id: string;
+  product_variant_id?: string | null;
+  description: string;
+  quantity: number;
+  price_per_unit: number;
+  total_amount: number;
   product?: {
-    name: string
-    description: string
-    type: string
-  }
+    name: string;
+    description: string;
+    type: string;
+  };
   product_variant?: {
-    size: number
-    unit: string
-    sku: string
-  }
-  isNew?: boolean
+    size: number;
+    unit: string;
+    sku: string;
+  };
+  isNew?: boolean;
 }
 
 // Define the API response type that includes the client property
 type InvoiceApiResponse = Database["public"]["Tables"]["invoices"]["Row"] & {
   client?: {
-    company_name: string
-    company_email: string
-    phone?: string | null
-    contact_person?: string | null
-    address?: string | null
-  }
-}
+    company_name: string;
+    company_email: string;
+    phone?: string | null;
+    contact_person?: string | null;
+    address?: string | null;
+  };
+};
 
 interface Invoice {
-  id: string
-  invoice_number: string
-  client_id: string
-  invoice_date: string
-  due_date: string
-  status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
-  total_amount: number
-  discount: number
-  vat: number
-  final_amount: number
-  notes?: string | null
-  created_at: string
-  created_by: string
+  id: string;
+  invoice_number: string;
+  client_id: string;
+  invoice_date: string;
+  due_date: string;
+  status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
+  total_amount: number;
+  discount: number;
+  vat: number;
+  final_amount: number;
+  notes?: string | null;
+  created_at: string;
+  created_by: string;
   client?: {
-    company_name: string
-    company_email: string
-    phone?: string | null
-    contact_person?: string | null
-    address?: string | null
-  }
-  items?: InvoiceItem[]
+    company_name: string;
+    company_email: string;
+    phone?: string | null;
+    contact_person?: string | null;
+    address?: string | null;
+  };
+  items?: InvoiceItem[];
 }
 
 interface Client {
-  id: string
-  company_name: string
-  company_email: string
-  phone?: string | null
-  contact_person?: string | null
-  address?: string | null
+  id: string;
+  company_name: string;
+  company_email: string;
+  phone?: string | null;
+  contact_person?: string | null;
+  address?: string | null;
 }
 
 interface Product {
-  id: string
-  name: string
-  description: string | null
-  type: Database["public"]["Enums"]["product_type"]
-  created_at: string | null
-  updated_at: string | null
+  id: string;
+  name: string;
+  description: string | null;
+  type: Database["public"]["Enums"]["product_type"];
+  created_at: string | null;
+  updated_at: string | null;
   variants: {
-    id: string
-    product_id: string
-    size: number
-    unit: string
-    cost_price: number | null
-    selling_price: number
-    sku: string | null
-    created_at: string | null
-    updated_at: string | null
-  }[]
+    id: string;
+    product_id: string;
+    size: number;
+    unit: string;
+    cost_price: number | null;
+    selling_price: number;
+    sku: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+  }[];
 }
 
 interface InvoicesClientProps {
-  initialInvoices: Invoice[]
-  initialClients: Client[]
-  initialProducts: Product[]
-  user: any // You can define a more specific type for user if needed
+  initialInvoices: Invoice[];
+  initialClients: Client[];
+  initialProducts: Product[];
+  user: any; // You can define a more specific type for user if needed
 }
 
 export default function InvoicesClient({
@@ -181,26 +205,29 @@ export default function InvoicesClient({
   initialProducts,
   user,
 }: InvoicesClientProps) {
-  const router = useRouter()
-  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices || [])
-  const [clients, setClients] = useState<Client[]>(initialClients || [])
-  const [products, setProducts] = useState<Product[]>(initialProducts || [])
-  const [loading, setLoading] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [sortField, setSortField] = useState<string>("invoice_date")
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isEditItemDialogOpen, setIsEditItemDialogOpen] = useState(false)
-  const [currentEditItem, setCurrentEditItem] = useState<InvoiceItem | null>(null)
-  const [activeTab, setActiveTab] = useState<string>("list")
+  const router = useRouter();
+  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices || []);
+  const [clients, setClients] = useState<Client[]>(initialClients || []);
+  const [products, setProducts] = useState<Product[]>(initialProducts || []);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortField, setSortField] = useState<string>("invoice_date");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isEditItemDialogOpen, setIsEditItemDialogOpen] = useState(false);
+  const [currentEditItem, setCurrentEditItem] = useState<InvoiceItem | null>(
+    null
+  );
+  const [activeTab, setActiveTab] = useState<string>("list");
+  const [loadingPdf, setLoadingPdf] = useState(false);
 
   // Create invoice state
-  const [selectedClientId, setSelectedClientId] = useState<string>("")
-  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([])
-  const [creatingInvoice, setCreatingInvoice] = useState(false)
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
+  const [creatingInvoice, setCreatingInvoice] = useState(false);
   const [formData, setFormData] = useState({
     product_id: "",
     product_variant_id: "",
@@ -212,16 +239,17 @@ export default function InvoicesClient({
     discount: 0,
     vat: 7.5, // Default VAT rate
     notes: "",
-  })
+  });
 
   // Refresh data
   const refreshData = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await getInvoices()
+      const response = await getInvoices();
       if (response.success && response.data) {
         // Cast the response data to the correct type that includes the client property
-        const invoicesWithClient = response.data as unknown as InvoiceApiResponse[]
+        const invoicesWithClient =
+          response.data as unknown as InvoiceApiResponse[];
 
         // Map to our Invoice interface
         const typedInvoices: Invoice[] = invoicesWithClient.map((invoice) => ({
@@ -230,7 +258,12 @@ export default function InvoicesClient({
           client_id: invoice.client_id,
           invoice_date: invoice.invoice_date || "",
           due_date: invoice.due_date,
-          status: invoice.status as "draft" | "sent" | "paid" | "overdue" | "cancelled",
+          status: invoice.status as
+            | "draft"
+            | "sent"
+            | "paid"
+            | "overdue"
+            | "cancelled",
           total_amount: invoice.total_amount,
           discount: invoice.discount || 0,
           vat: invoice.vat || 0,
@@ -239,62 +272,62 @@ export default function InvoicesClient({
           created_at: invoice.created_at || "",
           created_by: invoice.created_by || "",
           client: invoice.client,
-        }))
+        }));
 
-        setInvoices(typedInvoices)
-        toast.success("Invoices refreshed successfully")
+        setInvoices(typedInvoices);
+        toast.success("Invoices refreshed successfully");
       } else {
-        toast.error(response.error || "Failed to refresh data")
+        toast.error(response.error || "Failed to refresh data");
       }
     } catch (error) {
-      toast.error("Failed to refresh data")
-      console.error(error)
+      toast.error("Failed to refresh data");
+      console.error(error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // View invoice details
   const viewInvoiceDetails = async (invoiceId: string) => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await getInvoiceWithItems(invoiceId)
+      const response = await getInvoiceWithItems(invoiceId);
       if (response.success && response.data) {
-        setSelectedInvoice(response.data as unknown as Invoice)
-        setIsViewDialogOpen(true)
+        setSelectedInvoice(response.data as unknown as Invoice);
+        setIsViewDialogOpen(true);
       } else {
-        toast.error(response.error || "Failed to load invoice details")
+        toast.error(response.error || "Failed to load invoice details");
       }
     } catch (error) {
-      toast.error("Failed to load invoice details")
-      console.error(error)
+      toast.error("Failed to load invoice details");
+      console.error(error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Delete invoice
   const handleDeleteInvoice = async () => {
-    if (!selectedInvoice) return
+    if (!selectedInvoice) return;
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await deleteInvoice(selectedInvoice.id)
+      const response = await deleteInvoice(selectedInvoice.id);
       if (response.success) {
-        setInvoices(invoices.filter((i) => i.id !== selectedInvoice.id))
-        setIsDeleteDialogOpen(false)
-        setSelectedInvoice(null)
-        toast.success("Invoice deleted successfully")
+        setInvoices(invoices.filter((i) => i.id !== selectedInvoice.id));
+        setIsDeleteDialogOpen(false);
+        setSelectedInvoice(null);
+        toast.success("Invoice deleted successfully");
       } else {
-        toast.error(response.error || "Failed to delete invoice")
+        toast.error(response.error || "Failed to delete invoice");
       }
     } catch (error) {
-      toast.error("Failed to delete invoice")
-      console.error(error)
+      toast.error("Failed to delete invoice");
+      console.error(error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Format currency
   const formatCurrency = (amount: number): string => {
@@ -302,178 +335,608 @@ export default function InvoicesClient({
       style: "currency",
       currency: "KES",
       minimumFractionDigits: 2,
-    }).format(amount)
-  }
+    }).format(amount);
+  };
 
   // Format date
   const formatDate = (dateString: string | null): string => {
-    if (!dateString) return "N/A"
-    return format(new Date(dateString), "MMM d, yyyy")
-  }
+    if (!dateString) return "N/A";
+    return format(new Date(dateString), "MMM d, yyyy");
+  };
 
   // Get status badge
   const getStatusBadge = (status: string | null): React.ReactElement | null => {
-    if (!status) return null
+    if (!status) return null;
 
     switch (status) {
       case "paid":
         return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 flex items-center gap-1">
+          <Badge
+            variant="outline"
+            className="bg-green-100 text-green-800 border-green-200 flex items-center gap-1"
+          >
             <CheckCircle2 className="h-3 w-3" />
             Paid
           </Badge>
-        )
+        );
       case "overdue":
         return (
           <Badge variant="destructive" className="flex items-center gap-1">
             <XCircle className="h-3 w-3" />
             Overdue
           </Badge>
-        )
+        );
       case "sent":
         return (
           <Badge variant="default" className="flex items-center gap-1">
             <FileCheck className="h-3 w-3" />
             Sent
           </Badge>
-        )
+        );
       case "draft":
         return (
           <Badge variant="secondary" className="flex items-center gap-1">
             <FileText className="h-3 w-3" />
             Draft
           </Badge>
-        )
+        );
       case "cancelled":
         return (
-          <Badge variant="outline" className="text-destructive flex items-center gap-1">
+          <Badge
+            variant="outline"
+            className="text-destructive flex items-center gap-1"
+          >
             <Trash2 className="h-3 w-3" />
             Cancelled
           </Badge>
-        )
+        );
       default:
         return (
           <Badge variant="outline" className="flex items-center gap-1">
             {status}
           </Badge>
-        )
+        );
     }
-  }
+  };
 
   // Sort invoices
   const sortInvoices = (a: Invoice, b: Invoice) => {
-    let comparison = 0
+    let comparison = 0;
 
     switch (sortField) {
       case "invoice_number":
-        comparison = a.invoice_number.localeCompare(b.invoice_number)
-        break
+        comparison = a.invoice_number.localeCompare(b.invoice_number);
+        break;
       case "client":
-        comparison = (a.client?.company_name || "").localeCompare(b.client?.company_name || "")
-        break
+        comparison = (a.client?.company_name || "").localeCompare(
+          b.client?.company_name || ""
+        );
+        break;
       case "amount":
-        comparison = a.final_amount - b.final_amount
-        break
+        comparison = a.final_amount - b.final_amount;
+        break;
       case "invoice_date":
-        comparison = new Date(a.invoice_date).getTime() - new Date(b.invoice_date).getTime()
-        break
+        comparison =
+          new Date(a.invoice_date).getTime() -
+          new Date(b.invoice_date).getTime();
+        break;
       case "due_date":
-        comparison = new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
-        break
+        comparison =
+          new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+        break;
       case "status":
-        comparison = (a.status || "").localeCompare(b.status || "")
-        break
+        comparison = (a.status || "").localeCompare(b.status || "");
+        break;
       default:
-        comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        comparison =
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     }
 
-    return sortDirection === "asc" ? comparison : -comparison
-  }
+    return sortDirection === "asc" ? comparison : -comparison;
+  };
 
   // Filter invoices based on search term and status
   const filteredInvoices = invoices
     .filter((invoice) => {
       // Status filter
       if (statusFilter !== "all" && invoice.status !== statusFilter) {
-        return false
+        return false;
       }
 
       // Search filter
       if (searchTerm) {
         return (
-          invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (invoice.client?.company_name || "").toLowerCase().includes(searchTerm.toLowerCase())
-        )
+          invoice.invoice_number
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          (invoice.client?.company_name || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
+        );
       }
 
-      return true
+      return true;
     })
-    .sort(sortInvoices)
+    .sort(sortInvoices);
 
   // Handle sort toggle
   const handleSortToggle = (field: string) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
-      setSortField(field)
-      setSortDirection("asc")
+      setSortField(field);
+      setSortDirection("asc");
     }
-  }
+  };
+
+  const handleGeneratePDF = async (invoiceId: string) => {
+    try {
+      setLoadingPdf(true);
+      toast.loading("Generating PDF...");
+
+      // Fetch invoice data
+      const invoiceData = await getInvoiceWithItems(invoiceId);
+      if (!invoiceData.success || !invoiceData.data) {
+        toast.error("Invoice not found");
+        return;
+      }
+
+      const invoice = invoiceData.data;
+
+      // Fetch client information
+      const clientInfo = invoice.client;
+      if (!clientInfo) {
+        toast.error("Client information not found");
+        return;
+      }
+
+      // Map items to the format needed for the PDF
+      const items = invoice.items.map((item) => {
+        return {
+          productName: item.products?.name || "Product",
+          variantName: item.product_variants
+            ? `${item.product_variants.size} ${item.product_variants.unit}`
+            : "Standard",
+          quantity: item.quantity.toString(),
+          price: formatCurrency(item.price_per_unit || 0),
+          total: formatCurrency(item.total_amount || 0),
+        };
+      });
+
+      // If no items were found, warn the user
+      if (!items.length) {
+        toast.warning("No items found in this invoice");
+      }
+
+      // Calculate financial values
+      const subtotal = formatCurrency(invoice.total_amount || 0);
+      const discount = formatCurrency(invoice.discount || 0);
+      const vat = invoice.vat || 16;
+      const grandTotal = formatCurrency(invoice.final_amount || 0);
+
+      // Company information
+      const companyInfo = {
+        name: "ANKARDS COMPANY LIMITED",
+        poBox: "209 - 00516",
+        tel: "+254 725 672 249",
+        mobile: "+254 721 891 399",
+        email: "info@ankards.co.ke",
+      };
+
+      // Create HTML for the invoice
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Invoice</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f3f4f6;
+      color: #1f2937;
+    }
+
+    .invoice-container {
+      max-width: 820px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 48px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      position: relative;
+    }
+
+    .watermark {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      font-size: 120px;
+      opacity: 0.03;
+      color: #000;
+      z-index: 0;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 20px;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      font-size: 32px;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+
+    .company-info {
+      text-align: right;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #6b7280;
+    }
+
+    .invoice-details {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+
+    .client-info h2 {
+      margin-bottom: 10px;
+      font-size: 18px;
+      color: #374151;
+    }
+
+    .client-info, .invoice-info {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .invoice-id {
+      font-weight: 700;
+      font-size: 16px;
+      color: #3b82f6;
+    }
+
+    .invoice-status {
+      margin-top: 8px;
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-draft { background-color: #f3f4f6; color: #6b7280; }
+    .status-sent { background-color: #dbeafe; color: #2563eb; }
+    .status-paid { background-color: #dcfce7; color: #16a34a; }
+    .status-overdue { background-color: #fee2e2; color: #dc2626; }
+
+    .dates span {
+      font-weight: 500;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: #111827;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+
+    th {
+      background-color: #f9fafb;
+      padding: 14px;
+      text-align: left;
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    td {
+      padding: 14px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+
+    .item-name {
+      font-weight: 500;
+    }
+
+    .item-description {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .summary {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .summary-table {
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .summary-table td {
+      padding: 8px 0;
+    }
+
+    .summary-table .total-row {
+      font-weight: 700;
+      font-size: 16px;
+      border-top: 2px solid #e5e7eb;
+      padding-top: 12px;
+      color: #1d4ed8;
+    }
+
+    .notes {
+      margin-top: 40px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 20px;
+    }
+
+    .notes-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+
+    .notes-content {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 14px;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-container">
+    <div class="watermark">INVOICE</div>
+
+    <div class="header">
+      <div class="logo">${companyInfo.name}</div>
+      <div class="company-info">
+        <div>P.O. Box ${companyInfo.poBox}</div>
+        <div>Tel: ${companyInfo.tel}</div>
+        <div>Mobile: ${companyInfo.mobile}</div>
+        <div>Email: ${companyInfo.email}</div>
+      </div>
+    </div>
+
+    <div class="invoice-details">
+      <div class="client-info">
+        <h2>Bill To:</h2>
+        <div><strong>${clientInfo?.company_name || "Client"}</strong></div>
+        <div>${clientInfo?.contact_person || ""}</div>
+        <div>${clientInfo?.address || ""}</div>
+        <div>${clientInfo?.company_email || ""}</div>
+        <div>${clientInfo?.phone || ""}</div>
+      </div>
+
+      <div class="invoice-info">
+        <div class="invoice-id">Invoice #${invoice.invoice_number}</div>
+        <div class="invoice-status status-${invoice.status.toLowerCase()}">${invoice.status.toUpperCase()}</div>
+        <div class="dates"><span>Issue Date:</span> ${format(
+          new Date(invoice.invoice_date),
+          "dd/MM/yyyy"
+        )}</div>
+        <div class="dates"><span>Due Date:</span> ${format(
+          new Date(invoice.due_date),
+          "dd/MM/yyyy"
+        )}</div>
+      </div>
+    </div>
+
+    <h2>Invoice Items</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Price</th>
+          <th class="text-right">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items
+          .map(
+            (item) => `
+          <tr>
+            <td>
+              <div class="item-name">${item.productName}</div>
+              <div class="item-description">${item.variantName}</div>
+            </td>
+            <td>${item.quantity}</td>
+            <td>${item.price}</td>
+            <td class="text-right">${item.total}</td>
+          </tr>
+        `
+          )
+          .join("")}
+      </tbody>
+    </table>
+
+    <div class="summary">
+      <table class="summary-table">
+        <tr>
+          <td>Subtotal:</td>
+          <td class="text-right">${subtotal}</td>
+        </tr>
+        <tr>
+          <td>Discount:</td>
+          <td class="text-right">${discount}</td>
+        </tr>
+        <tr>
+          <td>VAT (${vat}%):</td>
+          <td class="text-right">${formatCurrency(
+            (invoice.total_amount * vat) / 100
+          )}</td>
+        </tr>
+        <tr class="total-row">
+          <td>Total:</td>
+          <td class="text-right">${grandTotal}</td>
+        </tr>
+      </table>
+    </div>
+
+    ${
+      invoice.notes
+        ? `
+      <div class="notes">
+        <div class="notes-title">Notes:</div>
+        <div class="notes-content">${invoice.notes}</div>
+      </div>`
+        : ""
+    }
+
+    <div class="footer">
+      Thank you for your business!
+    </div>
+  </div>
+</body>
+</html>`;
+
+      // Generate PDF using the server API
+      const response = await fetch("/api/generate-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          html,
+          filename: `Invoice-${invoice.invoice_number}.pdf`,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate PDF");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Invoice-${invoice.invoice_number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.dismiss();
+      toast.success("PDF generated successfully");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.dismiss();
+      toast.error("Failed to generate PDF");
+    } finally {
+      setLoadingPdf(false);
+    }
+  };
 
   // Handle input change for create invoice form
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   // Handle product selection
   const handleProductSelect = (value: string) => {
-    setFormData((prev) => ({ ...prev, product_id: value, product_variant_id: "" }))
+    setFormData((prev) => ({
+      ...prev,
+      product_id: value,
+      product_variant_id: "",
+    }));
 
     // Reset price if product changes
     setFormData((prev) => ({
       ...prev,
       price_per_unit: 0,
-    }))
+    }));
 
     // Auto-fill description
-    const selectedProduct = products.find((p) => p.id === value)
+    const selectedProduct = products.find((p) => p.id === value);
     if (selectedProduct) {
       setFormData((prev) => ({
         ...prev,
         description: selectedProduct.name,
-      }))
+      }));
     }
-  }
+  };
 
   // Handle variant selection
   const handleVariantSelect = (value: string) => {
-    setFormData((prev) => ({ ...prev, product_variant_id: value }))
+    setFormData((prev) => ({ ...prev, product_variant_id: value }));
 
     // Auto-fill price if variant is selected
-    const selectedProduct = products.find((p) => p.id === formData.product_id)
+    const selectedProduct = products.find((p) => p.id === formData.product_id);
     if (selectedProduct) {
-      const selectedVariant = selectedProduct.variants?.find((v) => v.id === value)
+      const selectedVariant = selectedProduct.variants?.find(
+        (v) => v.id === value
+      );
       if (selectedVariant) {
         setFormData((prev) => ({
           ...prev,
           price_per_unit: selectedVariant.selling_price,
           description: `${selectedProduct.name} - ${selectedVariant.size} ${selectedVariant.unit}`,
-        }))
+        }));
       }
     }
-  }
+  };
 
   // Add item to invoice
   const handleAddItem = () => {
-    if (!formData.product_id || formData.quantity <= 0 || formData.price_per_unit <= 0) {
-      toast.error("Please fill in all required fields with valid values")
-      return
+    if (
+      !formData.product_id ||
+      formData.quantity <= 0 ||
+      formData.price_per_unit <= 0
+    ) {
+      toast.error("Please fill in all required fields with valid values");
+      return;
     }
 
     // Find product and variant for display
-    const selectedProduct = products.find((p) => p.id === formData.product_id)
-    const selectedVariant = selectedProduct?.variants?.find((v) => v.id === formData.product_variant_id)
+    const selectedProduct = products.find((p) => p.id === formData.product_id);
+    const selectedVariant = selectedProduct?.variants?.find(
+      (v) => v.id === formData.product_variant_id
+    );
 
     const newItem: InvoiceItem = {
       id: `temp-${Date.now()}`,
@@ -496,9 +959,9 @@ export default function InvoicesClient({
             sku: selectedVariant.sku || "",
           }
         : undefined,
-    }
+    };
 
-    setInvoiceItems((prev) => [...prev, newItem])
+    setInvoiceItems((prev) => [...prev, newItem]);
 
     // Reset form fields
     setFormData((prev) => ({
@@ -508,63 +971,70 @@ export default function InvoicesClient({
       description: "",
       quantity: 1,
       price_per_unit: 0,
-    }))
+    }));
 
-    toast.success("Item added to invoice")
-  }
+    toast.success("Item added to invoice");
+  };
 
   // Remove item from invoice
   const handleRemoveItem = (id: string | number) => {
-    setInvoiceItems((prev) => prev.filter((item) => item.id !== id))
-    toast.success("Item removed from invoice")
-  }
+    setInvoiceItems((prev) => prev.filter((item) => item.id !== id));
+    toast.success("Item removed from invoice");
+  };
 
   // Edit invoice item
   const handleEditItem = (item: InvoiceItem) => {
-    setCurrentEditItem(item)
-    setIsEditItemDialogOpen(true)
-  }
+    setCurrentEditItem(item);
+    setIsEditItemDialogOpen(true);
+  };
 
   // Update edited item
   const handleUpdateItem = () => {
-    if (!currentEditItem) return
+    if (!currentEditItem) return;
 
     // Update the item in the list
     setInvoiceItems((prev) =>
       prev.map((item) =>
         item.id === currentEditItem.id
-          ? { ...currentEditItem, total_amount: currentEditItem.quantity * currentEditItem.price_per_unit }
-          : item,
-      ),
-    )
+          ? {
+              ...currentEditItem,
+              total_amount:
+                currentEditItem.quantity * currentEditItem.price_per_unit,
+            }
+          : item
+      )
+    );
 
-    setIsEditItemDialogOpen(false)
-    setCurrentEditItem(null)
-    toast.success("Item updated")
-  }
+    setIsEditItemDialogOpen(false);
+    setCurrentEditItem(null);
+    toast.success("Item updated");
+  };
 
   // Create invoice
   const handleCreateInvoice = async () => {
     if (!selectedClientId) {
-      toast.error("Please select a client")
-      return
+      toast.error("Please select a client");
+      return;
     }
 
     if (invoiceItems.length === 0) {
-      toast.error("Please add at least one item to the invoice")
-      return
+      toast.error("Please add at least one item to the invoice");
+      return;
     }
 
     try {
-      setCreatingInvoice(true)
+      setCreatingInvoice(true);
 
       // Calculate total amount
-      const totalAmount = invoiceItems.reduce((sum, item) => sum + item.total_amount, 0)
+      const totalAmount = invoiceItems.reduce(
+        (sum, item) => sum + item.total_amount,
+        0
+      );
 
       // Apply discount and VAT
-      const discount = Number(formData.discount)
-      const vat = (totalAmount * Number(formData.vat)) / 100
-      const finalAmount = totalAmount - discount + vat
+      const discount = Number(formData.discount);
+      const vat = (totalAmount * Number(formData.vat)) / 100;
+      const finalAmount = totalAmount - discount + vat;
 
       // Prepare invoice data
       const invoiceData = {
@@ -578,7 +1048,7 @@ export default function InvoicesClient({
         final_amount: finalAmount,
         notes: formData.notes || null,
         created_by: user?.id || "",
-      }
+      };
 
       // Create invoice
       const response = await createInvoice(
@@ -590,33 +1060,33 @@ export default function InvoicesClient({
           quantity: item.quantity,
           price_per_unit: item.price_per_unit,
           total_amount: item.total_amount,
-        })),
-      )
+        }))
+      );
 
       if (response.success && response.invoice_id) {
-        toast.success("Invoice created successfully")
+        toast.success("Invoice created successfully");
 
         // Reset form
-        resetForm()
+        resetForm();
 
         // Refresh invoices list and switch to list tab
-        await refreshData()
-        setActiveTab("list")
+        await refreshData();
+        setActiveTab("list");
       } else {
-        toast.error(response.error || "Failed to create invoice")
+        toast.error(response.error || "Failed to create invoice");
       }
     } catch (error) {
-      console.error("Error creating invoice:", error)
-      toast.error("Failed to create invoice")
+      console.error("Error creating invoice:", error);
+      toast.error("Failed to create invoice");
     } finally {
-      setCreatingInvoice(false)
+      setCreatingInvoice(false);
     }
-  }
+  };
 
   // Reset form
   const resetForm = () => {
-    setInvoiceItems([])
-    setSelectedClientId("")
+    setInvoiceItems([]);
+    setSelectedClientId("");
     setFormData({
       product_id: "",
       product_variant_id: "",
@@ -628,31 +1098,41 @@ export default function InvoicesClient({
       discount: 0,
       vat: 7.5,
       notes: "",
-    })
-  }
+    });
+  };
 
   // Calculate subtotal
-  const subtotal = invoiceItems.reduce((sum, item) => sum + item.total_amount, 0)
+  const subtotal = invoiceItems.reduce(
+    (sum, item) => sum + item.total_amount,
+    0
+  );
 
   // Calculate discount amount
-  const discountAmount = Number(formData.discount)
+  const discountAmount = Number(formData.discount);
 
   // Calculate VAT amount
-  const vatAmount = (subtotal * Number(formData.vat)) / 100
+  const vatAmount = (subtotal * Number(formData.vat)) / 100;
 
   // Calculate final total
-  const finalTotal = subtotal - discountAmount + vatAmount
+  const finalTotal = subtotal - discountAmount + vatAmount;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold">Invoice Management</h1>
-          <p className="text-muted-foreground mt-1">Create and manage invoices for your clients</p>
+          <p className="text-muted-foreground mt-1">
+            Create and manage invoices for your clients
+          </p>
         </div>
       </div>
 
-      <Tabs defaultValue="list" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        defaultValue="list"
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="grid w-full md:w-auto grid-cols-2">
           <TabsTrigger value="create" className="gap-2">
             <Plus className="h-4 w-4" />
@@ -676,10 +1156,15 @@ export default function InvoicesClient({
                     <Building2 className="h-5 w-5 text-primary" />
                     <CardTitle>Client Information</CardTitle>
                   </div>
-                  <CardDescription>Select the client for this invoice</CardDescription>
+                  <CardDescription>
+                    Select the client for this invoice
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                  <Select
+                    value={selectedClientId}
+                    onValueChange={setSelectedClientId}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a client" />
                     </SelectTrigger>
@@ -695,14 +1180,25 @@ export default function InvoicesClient({
                   {selectedClientId && (
                     <div className="mt-4 p-3 bg-muted/50 rounded-md">
                       <p className="text-sm font-medium">
-                        {clients.find((c) => c.id === selectedClientId)?.company_name}
+                        {
+                          clients.find((c) => c.id === selectedClientId)
+                            ?.company_name
+                        }
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {clients.find((c) => c.id === selectedClientId)?.company_email}
+                        {
+                          clients.find((c) => c.id === selectedClientId)
+                            ?.company_email
+                        }
                       </p>
-                      {clients.find((c) => c.id === selectedClientId)?.contact_person && (
+                      {clients.find((c) => c.id === selectedClientId)
+                        ?.contact_person && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          Contact: {clients.find((c) => c.id === selectedClientId)?.contact_person}
+                          Contact:{" "}
+                          {
+                            clients.find((c) => c.id === selectedClientId)
+                              ?.contact_person
+                          }
                         </p>
                       )}
                     </div>
@@ -717,16 +1213,25 @@ export default function InvoicesClient({
                     <Package className="h-5 w-5 text-primary" />
                     <CardTitle>Add Item</CardTitle>
                   </div>
-                  <CardDescription>Add products to your invoice</CardDescription>
+                  <CardDescription>
+                    Add products to your invoice
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="product" className="flex items-center gap-1">
+                      <Label
+                        htmlFor="product"
+                        className="flex items-center gap-1"
+                      >
                         <ShoppingCart className="h-4 w-4" />
                         Product
                       </Label>
-                      <Select name="product_id" value={formData.product_id} onValueChange={handleProductSelect}>
+                      <Select
+                        name="product_id"
+                        value={formData.product_id}
+                        onValueChange={handleProductSelect}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select product" />
                         </SelectTrigger>
@@ -740,31 +1245,46 @@ export default function InvoicesClient({
                       </Select>
                     </div>
 
-                    {formData.product_id && products.find((p) => p.id === formData.product_id)?.variants && (
-                      <div className="space-y-2">
-                        <Label htmlFor="variant" className="flex items-center gap-1">
-                          <Package className="h-4 w-4" />
-                          Variant
-                        </Label>
-                        <Select value={formData.product_variant_id} onValueChange={handleVariantSelect}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select variant" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {products
-                              .find((p) => p.id === formData.product_id)
-                              ?.variants?.map((variant) => (
-                                <SelectItem key={variant.id} value={variant.id}>
-                                  {variant.size} {variant.unit} - {formatCurrency(variant.selling_price)}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                    {formData.product_id &&
+                      products.find((p) => p.id === formData.product_id)
+                        ?.variants && (
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="variant"
+                            className="flex items-center gap-1"
+                          >
+                            <Package className="h-4 w-4" />
+                            Variant
+                          </Label>
+                          <Select
+                            value={formData.product_variant_id}
+                            onValueChange={handleVariantSelect}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select variant" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {products
+                                .find((p) => p.id === formData.product_id)
+                                ?.variants?.map((variant) => (
+                                  <SelectItem
+                                    key={variant.id}
+                                    value={variant.id}
+                                  >
+                                    {variant.size} {variant.unit} -{" "}
+                                    {formatCurrency(variant.selling_price)}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
 
                     <div className="space-y-2">
-                      <Label htmlFor="description" className="flex items-center gap-1">
+                      <Label
+                        htmlFor="description"
+                        className="flex items-center gap-1"
+                      >
                         <FileText className="h-4 w-4" />
                         Description
                       </Label>
@@ -780,7 +1300,10 @@ export default function InvoicesClient({
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="quantity" className="flex items-center gap-1">
+                        <Label
+                          htmlFor="quantity"
+                          className="flex items-center gap-1"
+                        >
                           <Calculator className="h-4 w-4" />
                           Quantity
                         </Label>
@@ -789,13 +1312,21 @@ export default function InvoicesClient({
                           name="quantity"
                           type="number"
                           value={formData.quantity}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, quantity: Number(e.target.value) }))}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              quantity: Number(e.target.value),
+                            }))
+                          }
                           min="1"
                           required
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="price_per_unit" className="flex items-center gap-1">
+                        <Label
+                          htmlFor="price_per_unit"
+                          className="flex items-center gap-1"
+                        >
                           <DollarSign className="h-4 w-4" />
                           Price (KES)
                         </Label>
@@ -804,7 +1335,12 @@ export default function InvoicesClient({
                           name="price_per_unit"
                           type="number"
                           value={formData.price_per_unit}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, price_per_unit: Number(e.target.value) }))}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              price_per_unit: Number(e.target.value),
+                            }))
+                          }
                           min="0"
                           step="0.01"
                           required
@@ -812,7 +1348,11 @@ export default function InvoicesClient({
                       </div>
                     </div>
 
-                    <Button type="button" onClick={handleAddItem} className="w-full">
+                    <Button
+                      type="button"
+                      onClick={handleAddItem}
+                      className="w-full"
+                    >
                       <Plus className="mr-2 h-4 w-4" />
                       Add Item
                     </Button>
@@ -827,13 +1367,18 @@ export default function InvoicesClient({
                     <Receipt className="h-5 w-5 text-primary" />
                     <CardTitle>Invoice Settings</CardTitle>
                   </div>
-                  <CardDescription>Configure dates, discount, VAT, and notes</CardDescription>
+                  <CardDescription>
+                    Configure dates, discount, VAT, and notes
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="invoice_date" className="flex items-center gap-1">
+                        <Label
+                          htmlFor="invoice_date"
+                          className="flex items-center gap-1"
+                        >
                           <Calendar className="h-4 w-4" />
                           Invoice Date
                         </Label>
@@ -843,11 +1388,16 @@ export default function InvoicesClient({
                               variant="outline"
                               className={cn(
                                 "w-full justify-start text-left font-normal",
-                                !formData.invoice_date && "text-muted-foreground",
+                                !formData.invoice_date &&
+                                  "text-muted-foreground"
                               )}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {formData.invoice_date ? format(formData.invoice_date, "PPP") : <span>Pick a date</span>}
+                              {formData.invoice_date ? (
+                                format(formData.invoice_date, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
@@ -865,7 +1415,10 @@ export default function InvoicesClient({
                         </Popover>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="due_date" className="flex items-center gap-1">
+                        <Label
+                          htmlFor="due_date"
+                          className="flex items-center gap-1"
+                        >
                           <Calendar className="h-4 w-4" />
                           Due Date
                         </Label>
@@ -875,11 +1428,15 @@ export default function InvoicesClient({
                               variant="outline"
                               className={cn(
                                 "w-full justify-start text-left font-normal",
-                                !formData.due_date && "text-muted-foreground",
+                                !formData.due_date && "text-muted-foreground"
                               )}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {formData.due_date ? format(formData.due_date, "PPP") : <span>Pick a date</span>}
+                              {formData.due_date ? (
+                                format(formData.due_date, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
@@ -901,7 +1458,10 @@ export default function InvoicesClient({
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="discount" className="flex items-center gap-1">
+                        <Label
+                          htmlFor="discount"
+                          className="flex items-center gap-1"
+                        >
                           <Percent className="h-4 w-4" />
                           Discount (KES)
                         </Label>
@@ -910,13 +1470,21 @@ export default function InvoicesClient({
                           name="discount"
                           type="number"
                           value={formData.discount}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, discount: Number(e.target.value) }))}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              discount: Number(e.target.value),
+                            }))
+                          }
                           min="0"
                           step="0.01"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="vat" className="flex items-center gap-1">
+                        <Label
+                          htmlFor="vat"
+                          className="flex items-center gap-1"
+                        >
                           <Percent className="h-4 w-4" />
                           VAT (%)
                         </Label>
@@ -925,7 +1493,12 @@ export default function InvoicesClient({
                           name="vat"
                           type="number"
                           value={formData.vat}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, vat: Number(e.target.value) }))}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              vat: Number(e.target.value),
+                            }))
+                          }
                           min="0"
                           max="100"
                         />
@@ -933,7 +1506,10 @@ export default function InvoicesClient({
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="notes" className="flex items-center gap-1">
+                      <Label
+                        htmlFor="notes"
+                        className="flex items-center gap-1"
+                      >
                         <FileText className="h-4 w-4" />
                         Notes
                       </Label>
@@ -959,14 +1535,20 @@ export default function InvoicesClient({
                     <Receipt className="h-5 w-5 text-primary" />
                     <CardTitle>Invoice Summary</CardTitle>
                   </div>
-                  <CardDescription>Review and finalize your invoice</CardDescription>
+                  <CardDescription>
+                    Review and finalize your invoice
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
                   {invoiceItems.length === 0 ? (
                     <div className="text-center py-10 border-t">
                       <ShoppingCart className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-muted-foreground font-medium">No items added yet</p>
-                      <p className="text-sm text-muted-foreground mt-1">Add items to your invoice using the form</p>
+                      <p className="text-muted-foreground font-medium">
+                        No items added yet
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Add items to your invoice using the form
+                      </p>
                     </div>
                   ) : (
                     <div className="border-t">
@@ -983,10 +1565,18 @@ export default function InvoicesClient({
                         <TableBody>
                           {invoiceItems.map((item) => (
                             <TableRow key={item.id}>
-                              <TableCell className="font-medium">{item.description}</TableCell>
-                              <TableCell className="text-right">{item.quantity}</TableCell>
-                              <TableCell className="text-right">{formatCurrency(item.price_per_unit)}</TableCell>
-                              <TableCell className="text-right">{formatCurrency(item.total_amount)}</TableCell>
+                              <TableCell className="font-medium">
+                                {item.description}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {item.quantity}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {formatCurrency(item.price_per_unit)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {formatCurrency(item.total_amount)}
+                              </TableCell>
                               <TableCell>
                                 <div className="flex justify-end gap-1">
                                   <Button
@@ -1026,7 +1616,9 @@ export default function InvoicesClient({
                         <span>- {formatCurrency(discountAmount)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">VAT ({formData.vat}%):</span>
+                        <span className="text-muted-foreground">
+                          VAT ({formData.vat}%):
+                        </span>
                         <span>+ {formatCurrency(vatAmount)}</span>
                       </div>
                       <Separator />
@@ -1039,7 +1631,11 @@ export default function InvoicesClient({
                     <Button
                       onClick={handleCreateInvoice}
                       className="mt-6 w-full max-w-xs"
-                      disabled={creatingInvoice || invoiceItems.length === 0 || !selectedClientId}
+                      disabled={
+                        creatingInvoice ||
+                        invoiceItems.length === 0 ||
+                        !selectedClientId
+                      }
                     >
                       {creatingInvoice ? (
                         <>
@@ -1067,7 +1663,9 @@ export default function InvoicesClient({
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <CardTitle className="text-xl">Invoice List</CardTitle>
-                  <CardDescription>View and manage all your invoices</CardDescription>
+                  <CardDescription>
+                    View and manage all your invoices
+                  </CardDescription>
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <div className="relative w-full sm:w-auto">
@@ -1082,7 +1680,11 @@ export default function InvoicesClient({
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-10 w-10">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10"
+                      >
                         <Filter className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -1124,7 +1726,9 @@ export default function InvoicesClient({
                         Overdue
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className={statusFilter === "cancelled" ? "bg-muted" : ""}
+                        className={
+                          statusFilter === "cancelled" ? "bg-muted" : ""
+                        }
                         onClick={() => setStatusFilter("cancelled")}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
@@ -1132,8 +1736,16 @@ export default function InvoicesClient({
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <Button variant="outline" size="icon" onClick={refreshData} disabled={loading} className="h-10 w-10">
-                    <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={refreshData}
+                    disabled={loading}
+                    className="h-10 w-10"
+                  >
+                    <RefreshCw
+                      className={cn("h-4 w-4", loading && "animate-spin")}
+                    />
                   </Button>
                 </div>
               </div>
@@ -1149,13 +1761,19 @@ export default function InvoicesClient({
                   {searchTerm || statusFilter !== "all" ? (
                     <>
                       <AlertCircle className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-muted-foreground font-medium">No invoices found</p>
-                      <p className="text-sm text-muted-foreground mt-1">Try a different search term or filter</p>
+                      <p className="text-muted-foreground font-medium">
+                        No invoices found
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Try a different search term or filter
+                      </p>
                     </>
                   ) : (
                     <>
                       <Receipt className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-muted-foreground font-medium">No invoices yet</p>
+                      <p className="text-muted-foreground font-medium">
+                        No invoices yet
+                      </p>
                       <p className="text-sm text-muted-foreground mt-1">
                         Create your first invoice using the Create Invoice tab
                       </p>
@@ -1168,45 +1786,76 @@ export default function InvoicesClient({
                     <Table>
                       <TableHeader className="bg-muted/50">
                         <TableRow>
-                          <TableHead className="cursor-pointer" onClick={() => handleSortToggle("invoice_number")}>
+                          <TableHead
+                            className="cursor-pointer"
+                            onClick={() => handleSortToggle("invoice_number")}
+                          >
                             <div className="flex items-center gap-1">
                               <Receipt className="h-4 w-4" />
-                              Invoice #{sortField === "invoice_number" && <ArrowUpDown className="h-3 w-3 ml-1" />}
+                              Invoice #
+                              {sortField === "invoice_number" && (
+                                <ArrowUpDown className="h-3 w-3 ml-1" />
+                              )}
                             </div>
                           </TableHead>
-                          <TableHead className="cursor-pointer" onClick={() => handleSortToggle("client")}>
+                          <TableHead
+                            className="cursor-pointer"
+                            onClick={() => handleSortToggle("client")}
+                          >
                             <div className="flex items-center gap-1">
                               <Building2 className="h-4 w-4" />
                               Client
-                              {sortField === "client" && <ArrowUpDown className="h-3 w-3 ml-1" />}
+                              {sortField === "client" && (
+                                <ArrowUpDown className="h-3 w-3 ml-1" />
+                              )}
                             </div>
                           </TableHead>
-                          <TableHead className="cursor-pointer" onClick={() => handleSortToggle("invoice_date")}>
+                          <TableHead
+                            className="cursor-pointer"
+                            onClick={() => handleSortToggle("invoice_date")}
+                          >
                             <div className="flex items-center gap-1">
                               <Calendar className="h-4 w-4" />
                               Date
-                              {sortField === "invoice_date" && <ArrowUpDown className="h-3 w-3 ml-1" />}
+                              {sortField === "invoice_date" && (
+                                <ArrowUpDown className="h-3 w-3 ml-1" />
+                              )}
                             </div>
                           </TableHead>
-                          <TableHead className="cursor-pointer" onClick={() => handleSortToggle("due_date")}>
+                          <TableHead
+                            className="cursor-pointer"
+                            onClick={() => handleSortToggle("due_date")}
+                          >
                             <div className="flex items-center gap-1">
                               <CalendarClock className="h-4 w-4" />
                               Due Date
-                              {sortField === "due_date" && <ArrowUpDown className="h-3 w-3 ml-1" />}
+                              {sortField === "due_date" && (
+                                <ArrowUpDown className="h-3 w-3 ml-1" />
+                              )}
                             </div>
                           </TableHead>
-                          <TableHead className="cursor-pointer text-right" onClick={() => handleSortToggle("amount")}>
+                          <TableHead
+                            className="cursor-pointer text-right"
+                            onClick={() => handleSortToggle("amount")}
+                          >
                             <div className="flex items-center justify-end gap-1">
                               <DollarSign className="h-4 w-4" />
                               Amount
-                              {sortField === "amount" && <ArrowUpDown className="h-3 w-3 ml-1" />}
+                              {sortField === "amount" && (
+                                <ArrowUpDown className="h-3 w-3 ml-1" />
+                              )}
                             </div>
                           </TableHead>
-                          <TableHead className="cursor-pointer" onClick={() => handleSortToggle("status")}>
+                          <TableHead
+                            className="cursor-pointer"
+                            onClick={() => handleSortToggle("status")}
+                          >
                             <div className="flex items-center gap-1">
                               <FileCheck className="h-4 w-4" />
                               Status
-                              {sortField === "status" && <ArrowUpDown className="h-3 w-3 ml-1" />}
+                              {sortField === "status" && (
+                                <ArrowUpDown className="h-3 w-3 ml-1" />
+                              )}
                             </div>
                           </TableHead>
                           <TableHead className="text-right">Actions</TableHead>
@@ -1215,14 +1864,24 @@ export default function InvoicesClient({
                       <TableBody>
                         {filteredInvoices.map((invoice) => (
                           <TableRow key={invoice.id} className="group">
-                            <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
-                            <TableCell>{invoice.client?.company_name || "Unknown"}</TableCell>
-                            <TableCell>{formatDate(invoice.invoice_date)}</TableCell>
-                            <TableCell>{formatDate(invoice.due_date)}</TableCell>
+                            <TableCell className="font-medium">
+                              {invoice.invoice_number}
+                            </TableCell>
+                            <TableCell>
+                              {invoice.client?.company_name || "Unknown"}
+                            </TableCell>
+                            <TableCell>
+                              {formatDate(invoice.invoice_date)}
+                            </TableCell>
+                            <TableCell>
+                              {formatDate(invoice.due_date)}
+                            </TableCell>
                             <TableCell className="text-right font-medium">
                               {formatCurrency(invoice.final_amount)}
                             </TableCell>
-                            <TableCell>{getStatusBadge(invoice.status)}</TableCell>
+                            <TableCell>
+                              {getStatusBadge(invoice.status)}
+                            </TableCell>
                             <TableCell className="text-right">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -1237,15 +1896,29 @@ export default function InvoicesClient({
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem onClick={() => viewInvoiceDetails(invoice.id)}>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      viewInvoiceDetails(invoice.id)
+                                    }
+                                  >
                                     <Eye className="h-4 w-4 mr-2" />
                                     View Details
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => router.push(`/dashboard/invoices/${invoice.id}`)}>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/invoices/${invoice.id}`
+                                      )
+                                    }
+                                  >
                                     <Pencil className="h-4 w-4 mr-2" />
                                     Edit Invoice
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleGeneratePDF(invoice.id)
+                                    }
+                                  >
                                     <Download className="h-4 w-4 mr-2" />
                                     Download PDF
                                   </DropdownMenuItem>
@@ -1253,8 +1926,8 @@ export default function InvoicesClient({
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
                                     onClick={() => {
-                                      setSelectedInvoice(invoice)
-                                      setIsDeleteDialogOpen(true)
+                                      setSelectedInvoice(invoice);
+                                      setIsDeleteDialogOpen(true);
                                     }}
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
@@ -1284,31 +1957,54 @@ export default function InvoicesClient({
               Invoice Details
             </DialogTitle>
             <DialogDescription>
-              {selectedInvoice?.invoice_number} - {formatDate(selectedInvoice?.invoice_date || null)}
+              {selectedInvoice?.invoice_number} -{" "}
+              {formatDate(selectedInvoice?.invoice_date || null)}
             </DialogDescription>
           </DialogHeader>
 
           {loading ? (
             <div className="text-center py-10">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-              <p className="text-muted-foreground">Loading invoice details...</p>
+              <p className="text-muted-foreground">
+                Loading invoice details...
+              </p>
             </div>
           ) : selectedInvoice ? (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">Client</h3>
-                  <p className="font-medium">{selectedInvoice.client?.company_name}</p>
-                  <p className="text-sm">{selectedInvoice.client?.contact_person}</p>
-                  <p className="text-sm">{selectedInvoice.client?.company_email}</p>
-                  {selectedInvoice.client?.address && <p className="text-sm">{selectedInvoice.client.address}</p>}
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Client
+                  </h3>
+                  <p className="font-medium">
+                    {selectedInvoice.client?.company_name}
+                  </p>
+                  <p className="text-sm">
+                    {selectedInvoice.client?.contact_person}
+                  </p>
+                  <p className="text-sm">
+                    {selectedInvoice.client?.company_email}
+                  </p>
+                  {selectedInvoice.client?.address && (
+                    <p className="text-sm">{selectedInvoice.client.address}</p>
+                  )}
                 </div>
                 <div className="text-right">
-                  <h3 className="text-sm font-medium text-muted-foreground">Invoice Details</h3>
-                  <p className="font-medium">{selectedInvoice.invoice_number}</p>
-                  <p className="text-sm">Issue Date: {formatDate(selectedInvoice.invoice_date)}</p>
-                  <p className="text-sm">Due Date: {formatDate(selectedInvoice.due_date)}</p>
-                  <div className="mt-1 flex justify-end">{getStatusBadge(selectedInvoice.status)}</div>
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    Invoice Details
+                  </h3>
+                  <p className="font-medium">
+                    {selectedInvoice.invoice_number}
+                  </p>
+                  <p className="text-sm">
+                    Issue Date: {formatDate(selectedInvoice.invoice_date)}
+                  </p>
+                  <p className="text-sm">
+                    Due Date: {formatDate(selectedInvoice.due_date)}
+                  </p>
+                  <div className="mt-1 flex justify-end">
+                    {getStatusBadge(selectedInvoice.status)}
+                  </div>
                 </div>
               </div>
 
@@ -1332,14 +2028,22 @@ export default function InvoicesClient({
                           {item.description}
                           {item.product_variant && (
                             <div className="text-xs text-muted-foreground">
-                              {item.product_variant.size} {item.product_variant.unit}
-                              {item.product_variant.sku && ` (SKU: ${item.product_variant.sku})`}
+                              {item.product_variant.size}{" "}
+                              {item.product_variant.unit}
+                              {item.product_variant.sku &&
+                                ` (SKU: ${item.product_variant.sku})`}
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">{item.quantity}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.price_per_unit)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.total_amount)}</TableCell>
+                        <TableCell className="text-right">
+                          {item.quantity}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.price_per_unit)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.total_amount)}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -1383,23 +2087,33 @@ export default function InvoicesClient({
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsViewDialogOpen(false)}
+            >
               Close
             </Button>
-            <Button>
-              <Download className="mr-2 h-4 w-4" />
-              Download PDF
-            </Button>
+            {selectedInvoice && (
+              <Button onClick={() => handleGeneratePDF(selectedInvoice.id)}>
+                <Download className="mr-2 h-4 w-4" />
+                Download PDF
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Edit Item Dialog */}
-      <Dialog open={isEditItemDialogOpen} onOpenChange={setIsEditItemDialogOpen}>
+      <Dialog
+        open={isEditItemDialogOpen}
+        onOpenChange={setIsEditItemDialogOpen}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Edit Invoice Item</DialogTitle>
-            <DialogDescription>Update the details of this invoice item</DialogDescription>
+            <DialogDescription>
+              Update the details of this invoice item
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -1407,7 +2121,11 @@ export default function InvoicesClient({
               <Input
                 id="edit-description"
                 value={currentEditItem?.description || ""}
-                onChange={(e) => setCurrentEditItem((prev) => (prev ? { ...prev, description: e.target.value } : null))}
+                onChange={(e) =>
+                  setCurrentEditItem((prev) =>
+                    prev ? { ...prev, description: e.target.value } : null
+                  )
+                }
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -1419,7 +2137,11 @@ export default function InvoicesClient({
                   min="1"
                   value={currentEditItem?.quantity || 0}
                   onChange={(e) =>
-                    setCurrentEditItem((prev) => (prev ? { ...prev, quantity: Number(e.target.value) } : null))
+                    setCurrentEditItem((prev) =>
+                      prev
+                        ? { ...prev, quantity: Number(e.target.value) }
+                        : null
+                    )
                   }
                 />
               </div>
@@ -1432,14 +2154,21 @@ export default function InvoicesClient({
                   step="0.01"
                   value={currentEditItem?.price_per_unit || 0}
                   onChange={(e) =>
-                    setCurrentEditItem((prev) => (prev ? { ...prev, price_per_unit: Number(e.target.value) } : null))
+                    setCurrentEditItem((prev) =>
+                      prev
+                        ? { ...prev, price_per_unit: Number(e.target.value) }
+                        : null
+                    )
                   }
                 />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditItemDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditItemDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button onClick={handleUpdateItem}>Save Changes</Button>
@@ -1448,12 +2177,16 @@ export default function InvoicesClient({
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete invoice {selectedInvoice?.invoice_number}? This action cannot be undone.
+              Are you sure you want to delete invoice{" "}
+              {selectedInvoice?.invoice_number}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1475,5 +2208,5 @@ export default function InvoicesClient({
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }
