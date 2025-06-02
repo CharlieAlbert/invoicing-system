@@ -10,7 +10,7 @@ async function getBrowser() {
   if (browserInstance) {
     return browserInstance;
   }
-  
+
   try {
     // Common browser paths for different OS
     const windowsPaths = [
@@ -24,7 +24,7 @@ async function getBrowser() {
 
     let executablePath;
     let launchArgs = [];
-    
+
     // Check if we're running on Vercel or locally
     if (process.env.VERCEL === "1") {
       // Use chromium-min on Vercel
@@ -33,7 +33,13 @@ async function getBrowser() {
         launchArgs = chromium.args;
       } catch (chromiumError) {
         console.error("Error getting chromium path:", chromiumError);
-        throw new Error(`Failed to get chromium path: ${chromiumError instanceof Error ? chromiumError.message : String(chromiumError)}`);
+        throw new Error(
+          `Failed to get chromium path: ${
+            chromiumError instanceof Error
+              ? chromiumError.message
+              : String(chromiumError)
+          }`
+        );
       }
     } else {
       // Try to find a local browser on Windows
@@ -43,7 +49,7 @@ async function getBrowser() {
           break;
         }
       }
-      
+
       // If no browser found locally, try chromium-min as fallback
       if (!executablePath) {
         try {
@@ -51,7 +57,13 @@ async function getBrowser() {
           launchArgs = chromium.args;
         } catch (chromiumError) {
           console.error("Error getting chromium path:", chromiumError);
-          throw new Error(`Failed to get chromium path: ${chromiumError instanceof Error ? chromiumError.message : String(chromiumError)}`);
+          throw new Error(
+            `Failed to get chromium path: ${
+              chromiumError instanceof Error
+                ? chromiumError.message
+                : String(chromiumError)
+            }`
+          );
         }
       } else {
         // Default args for local browsers
@@ -62,70 +74,74 @@ async function getBrowser() {
         ];
       }
     }
-    
+
     if (!executablePath) {
       throw new Error("No browser executable path found");
     }
-    
+
     console.log(`Launching browser with executable path: ${executablePath}`);
-    
+
     // Launch with appropriate args
     browserInstance = await puppeteer.launch({
       args: launchArgs,
       executablePath,
       headless: true,
     });
-    
+
     console.log("Browser launched successfully");
     return browserInstance;
   } catch (error) {
     console.error("Error launching browser:", error);
-    throw new Error(`Failed to launch browser: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to launch browser: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
 }
 
 export async function POST(request: Request) {
   let page = null;
-  
+
   try {
     // Parse the request
     const body = await request.json();
     const { html } = body;
-    
-    if (!html || typeof html !== 'string') {
-      return new Response(
-        JSON.stringify({ error: "Invalid HTML content" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+
+    if (!html || typeof html !== "string") {
+      return new Response(JSON.stringify({ error: "Invalid HTML content" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
-    
+
     console.log("Getting browser instance...");
     const browser = await getBrowser();
-    
+
     console.log("Creating new page...");
     page = await browser.newPage();
-    
+
     // Basic page setup
     await page.setViewport({ width: 800, height: 1100 });
-    
+
     console.log("Setting page content...");
     await page.setContent(html, { waitUntil: "networkidle0" });
-    
+
     console.log("Generating PDF...");
     const pdfBuffer = await page.pdf({
-      format: 'A4',
+      format: "A4",
       printBackground: true,
-      margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
+      margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
     });
-    
+
     console.log("PDF generated successfully");
-    
+
     // Close the page but keep the browser instance
     if (page) {
       await page.close();
       console.log("Page closed");
     }
-    
+
     return new Response(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
@@ -134,7 +150,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("PDF Generation Error:", error);
-    
+
     // Clean up resources
     if (page) {
       try {
@@ -144,9 +160,12 @@ export async function POST(request: Request) {
         console.error("Error closing page:", closeError);
       }
     }
-    
+
     // If browser instance is in a bad state, reset it
-    if ((error as Error).message?.includes("Target closed") || (error as Error).message?.includes("Session closed")) {
+    if (
+      (error as Error).message?.includes("Target closed") ||
+      (error as Error).message?.includes("Session closed")
+    ) {
       try {
         if (browserInstance) {
           await browserInstance.close();
@@ -158,7 +177,7 @@ export async function POST(request: Request) {
         browserInstance = null;
       }
     }
-    
+
     return new Response(
       JSON.stringify({
         error: "PDF generation failed",

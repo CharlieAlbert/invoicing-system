@@ -435,7 +435,6 @@ export default function InvoicesClient({
     return sortDirection === "asc" ? comparison : -comparison;
   };
 
-  // Filter invoices based on search term and status
   const filteredInvoices = invoices
     .filter((invoice) => {
       // Status filter
@@ -459,7 +458,6 @@ export default function InvoicesClient({
     })
     .sort(sortInvoices);
 
-  // Handle sort toggle
   const handleSortToggle = (field: string) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -474,7 +472,6 @@ export default function InvoicesClient({
       setLoadingPdf(true);
       toast.loading("Generating PDF...");
 
-      // Fetch invoice data
       const invoiceData = await getInvoiceWithItems(invoiceId);
       if (!invoiceData.success || !invoiceData.data) {
         toast.error("Invoice not found");
@@ -483,14 +480,12 @@ export default function InvoicesClient({
 
       const invoice = invoiceData.data;
 
-      // Fetch client information
       const clientInfo = invoice.client;
       if (!clientInfo) {
         toast.error("Client information not found");
         return;
       }
 
-      // Map items to the format needed for the PDF
       const items = invoice.items.map((item) => {
         return {
           productName: item.products?.name || "Product",
@@ -503,18 +498,15 @@ export default function InvoicesClient({
         };
       });
 
-      // If no items were found, warn the user
       if (!items.length) {
         toast.warning("No items found in this invoice");
       }
 
-      // Calculate financial values
       const subtotal = formatCurrency(invoice.total_amount || 0);
       const discount = formatCurrency(invoice.discount || 0);
       const vat = invoice.vat || 16;
       const grandTotal = formatCurrency(invoice.final_amount || 0);
 
-      // Company information
       const companyInfo = {
         name: "ANKARDS COMPANY LIMITED",
         poBox: "209 - 00516",
@@ -523,9 +515,8 @@ export default function InvoicesClient({
         email: "info@ankards.co.ke",
       };
 
-      // Create HTML for the invoice
       const html = `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <title>Invoice</title>
@@ -831,8 +822,8 @@ export default function InvoicesClient({
 </body>
 </html>`;
 
-      // Generate PDF using the server API
-      const response = await fetch("/api/generate-pdf", {
+      // Use Netlify Function instead of Next.js API route
+      const response = await fetch("/.netlify/functions/generate-pdf", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
