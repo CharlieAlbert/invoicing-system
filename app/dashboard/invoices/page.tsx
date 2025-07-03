@@ -6,7 +6,6 @@ import { getInvoices } from "@/lib/supabase/server-extended/invoices";
 import InvoicesClient from "@/components/dashboard/invoices/invoices-client";
 import { Loader2, AlertCircle } from "lucide-react";
 
-// Enable revalidation every 60 seconds
 export const revalidate = 60;
 
 export default async function InvoicesPage() {

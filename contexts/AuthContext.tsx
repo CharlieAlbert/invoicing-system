@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else if (data) {
         setUser(data);
         setError(null);
-        console.log("User logged in: ", data);
+        console.log("User logged in");
       }
     } catch (err) {
       setError("An unexpected error occurred.");
@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event) => {
-        console.log("Auth state changed:", event);
+        console.log("Auth state changed");
         if (event === "SIGNED_IN") {
           await fetchUser();
           router.refresh();
